@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import Link from 'next/link';
 import { MousePointer2, ArrowRight, ChevronDown } from 'lucide-react';
 
 // --- Types ---
@@ -436,11 +437,11 @@ const HeroContent: React.FC = () => {
                       />
 
                       {/* BUTTON */}
-                      <button className="relative inline-flex items-center gap-2 px-8 py-4 bg-black text-white rounded-full font-semibold tracking-wide overflow-hidden transition-all hover:bg-neutral-900">
+                      <Link href="/chat" className="relative inline-flex items-center gap-2 px-8 py-4 bg-black text-white rounded-full font-semibold tracking-wide overflow-hidden transition-all hover:bg-neutral-900">
                         <span className="relative z-10">Generate Your First Study</span>
                         <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
                         <div className="absolute inset-0 bg-white scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 opacity-5"></div>
-                      </button>
+                      </Link>
                     </div>
                   </div>
 
