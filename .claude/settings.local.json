@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(node -e \"const d = require\\('dicons'\\); console.log\\(Object.keys\\(d.DIcons\\).filter\\(k => /mail|x|twitter|instagram|thread|whatsapp|behance|facebook|linkedin|youtube/i.test\\(k\\)\\).join\\(', '\\)\\)\")",
+      "Bash(node -e \"const l = require\\('lucide-react'\\); const keys = Object.keys\\(l\\).filter\\(k => /^[A-Z]/.test\\(k\\) && !/Icon$|^Lucide/.test\\(k\\)\\); console.log\\(keys.filter\\(k => /twitter|instagram|youtube|linkedin|facebook|behance|whatsapp|threads/i.test\\(k\\)\\).join\\(', '\\)\\)\")",
+      "Bash(grep -o '\"[A-Z][a-zA-Z]\\\\{2,\\\\}\"' c:/Users/alisu/scripture-path/node_modules/dicons/dist/cjs/dicons.js)"
+    ]
+  }
+}
