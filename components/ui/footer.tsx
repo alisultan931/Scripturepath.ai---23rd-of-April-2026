@@ -60,11 +60,6 @@ const socialIcons = [
   { icon: "X", label: "X", href: "#" },
   { icon: "Instagram", label: "Instagram", href: "#" },
   { icon: "Threads", label: "Threads", href: "#" },
-  { icon: "WhatsApp", label: "WhatsApp", href: "#" },
-  { icon: "Behance", label: "Behance", href: "#" },
-  { icon: "Facebook", label: "Facebook", href: "#" },
-  { icon: "LinkedIn", label: "LinkedIn", href: "#" },
-  { icon: "YouTube", label: "YouTube", href: "#" },
 ];
 
 const Footer = () => {
@@ -74,10 +69,7 @@ const Footer = () => {
       {/* Top: logo + description */}
       <div className="mx-auto max-w-7xl px-6 py-12">
         <div className="flex items-start gap-6">
-          <div className="shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-red-500 font-bold text-white text-xl">
-            D
-          </div>
-          <p className="text-sm leading-relaxed text-white/70 max-w-2xl">
+<p className="text-sm leading-relaxed text-white/70 max-w-2xl">
             Description will go here. It can be a tagline, a mission statement, or a brief
           </p>
         </div>
