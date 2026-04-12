@@ -49,14 +49,14 @@ const TONE_OPTIONS = [
   "Academic — scholarly & rigorous",
 ];
 
-const TRANSLATION_OPTIONS = [
-  "ESV (recommended)",
-  "NIV",
-  "KJV",
-  "NKJV",
-  "NASB",
-  "NLT",
-  "CSB",
+const TRANSLATION_OPTIONS: { label: string; value: string; available: boolean }[] = [
+  { label: "KJV (recommended)", value: "KJV (recommended)", available: true },
+  { label: "ESV — coming soon", value: "ESV", available: false },
+  { label: "NIV — coming soon", value: "NIV", available: false },
+  { label: "NKJV — coming soon", value: "NKJV", available: false },
+  { label: "NASB — coming soon", value: "NASB", available: false },
+  { label: "NLT — coming soon", value: "NLT", available: false },
+  { label: "CSB — coming soon", value: "CSB", available: false },
 ];
 
 const EXPLORE_TOPICS = {
@@ -87,6 +87,54 @@ const EXPLORE_TOPICS = {
     "End times",
   ],
 };
+
+// --- Translation select component ---
+
+function TranslationSelectField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+      <span className="text-[10px] font-bold tracking-widest text-white/50 uppercase">
+        Translation
+      </span>
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={cn(
+            "w-full appearance-none rounded-lg",
+            "px-3 py-2.5 pr-8 text-sm text-white/90 font-light",
+            "focus:outline-none cursor-pointer transition-all duration-200",
+            "backdrop-blur-sm",
+            "border border-white/15 bg-white/5",
+            "hover:border-white/30 focus:border-white/40",
+          )}
+          style={{ background: "rgba(10,10,10,0.7)" }}
+        >
+          {TRANSLATION_OPTIONS.map((opt) => (
+            <option
+              key={opt.value}
+              value={opt.value}
+              disabled={!opt.available}
+              className={cn(
+                "bg-neutral-900",
+                opt.available ? "text-white" : "text-white/30",
+              )}
+            >
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
+      </div>
+    </div>
+  );
+}
 
 // --- Select component ---
 
@@ -141,7 +189,7 @@ export default function ScripturePathChat() {
   const [loading, setLoading] = useState(false);
   const [audience, setAudience] = useState(AUDIENCE_OPTIONS[0]);
   const [tone, setTone] = useState(TONE_OPTIONS[0]);
-  const [translation, setTranslation] = useState(TRANSLATION_OPTIONS[0]);
+  const [translation, setTranslation] = useState(TRANSLATION_OPTIONS[0].value);
 
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
     minHeight: 110,
@@ -251,9 +299,7 @@ export default function ScripturePathChat() {
               onChange={setTone}
               hint="AI picks based on your topic"
             />
-            <SelectField
-              label="Translation"
-              options={TRANSLATION_OPTIONS}
+            <TranslationSelectField
               value={translation}
               onChange={setTranslation}
             />
