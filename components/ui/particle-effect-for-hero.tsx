@@ -324,30 +324,37 @@ export const AntiGravityCanvas: React.FC = () => {
     return () => cancelAnimationFrame(frameIdRef.current);
   }, [animate]);
 
-  // Mouse Handlers
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    mouseRef.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-      isActive: true,
+  // Mouse Handlers — listen at window level so overlapping UI elements don't block events
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      mouseRef.current = {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+        isActive: true,
+      };
     };
-  };
 
-  const handleMouseLeave = () => {
-    mouseRef.current.isActive = false;
-  };
+    const handleMouseLeave = () => {
+      mouseRef.current.isActive = false;
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, []);
 
   return (
-    <div 
-      ref={containerRef} 
-      className="absolute inset-0 z-0 overflow-hidden bg-black cursor-crosshair"
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+    <div
+      ref={containerRef}
+      className="absolute inset-0 z-0 overflow-hidden bg-black"
     >
       <canvas ref={canvasRef} className="block w-full h-full" />
-    
     </div>
   );
 };
@@ -385,7 +392,7 @@ const HeroContent: React.FC = () => {
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none px-4">
             <div className="max-w-4xl w-full text-center space-y-8">
                 <div className="inline-block animate-fade-in-up">
-                    <span className="py-1 px-3 border border-white/20 rounded-full text-xs font-mono text-white/60 tracking-widest uppercase bg-white/5 backdrop-blur-sm">
+                    <span className="whitespace-nowrap py-1 px-3 border border-white/20 rounded-full text-[9px] sm:text-xs font-mono text-white/60 tracking-normal sm:tracking-widest uppercase bg-white/5 backdrop-blur-sm">
                         Scripture-First AI · Extended Reasoning · No Hallucinations
                     </span>
                 </div>
@@ -407,7 +414,7 @@ const HeroContent: React.FC = () => {
                   }
                 `}</style>
 
-                <div className="pt-8 pointer-events-auto flex items-center justify-center gap-6">
+                <div className="pt-8 pointer-events-auto flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
 
                   <div className="group relative inline-flex transition-all hover:scale-105 active:scale-95">
                     <div
@@ -441,7 +448,7 @@ const HeroContent: React.FC = () => {
                       />
 
                       {/* BUTTON */}
-                      <Link href="/chat" className="relative inline-flex items-center gap-2 px-8 py-4 bg-black text-white rounded-full font-semibold tracking-wide overflow-hidden transition-all hover:bg-neutral-900">
+                      <Link href="/chat" className="relative inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-black text-white rounded-full font-semibold tracking-wide overflow-hidden transition-all hover:bg-neutral-900">
                         <span className="relative z-10">Generate Your First Study</span>
                         <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
                         <div className="absolute inset-0 bg-white scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 opacity-5"></div>
