@@ -31,7 +31,7 @@ export const Component = () => {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
         radius: 0,
-        alpha: 0.6,
+        alpha: 0.8,
       });
     };
 
@@ -49,7 +49,7 @@ export const Component = () => {
           ctx.beginPath();
           ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
           ctx.strokeStyle = `rgba(255, 255, 255, ${r.alpha})`;
-          ctx.lineWidth = 1.5;
+          ctx.lineWidth = 2;
           ctx.stroke();
         }
       });
