@@ -1,50 +1,23 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Textarea } from "@/components/chat-parts/textarea";
-import { Button } from "@/components/chat-parts/button";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import {
-  ImageIcon,
-  FileUp,
-  MonitorIcon,
-  CircleUserRound,
-  ArrowUpIcon,
-  Paperclip,
-  PlusIcon,
-  Code2,
-  Palette,
-  Layers,
-  Rocket,
-} from "lucide-react";
+import { AntiGravityCanvas, Navigation } from "@/components/ui/particle-effect-for-hero";
+import AiLoader from "@/components/ui/ai-loader";
+import { ArrowRight, ChevronDown } from "lucide-react";
 
-interface AutoResizeProps {
-  minHeight: number;
-  maxHeight?: number;
-}
+// --- Auto-resize textarea hook ---
 
-function useAutoResizeTextarea({ minHeight, maxHeight }: AutoResizeProps) {
+function useAutoResizeTextarea({ minHeight, maxHeight }: { minHeight: number; maxHeight?: number }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const adjustHeight = useCallback(
-    (reset?: boolean) => {
-      const textarea = textareaRef.current;
-      if (!textarea) return;
-
-      if (reset) {
-        textarea.style.height = `${minHeight}px`;
-        return;
-      }
-
-      textarea.style.height = `${minHeight}px`; // reset first
-      const newHeight = Math.max(
-        minHeight,
-        Math.min(textarea.scrollHeight, maxHeight ?? Infinity)
-      );
-      textarea.style.height = `${newHeight}px`;
-    },
-    [minHeight, maxHeight]
-  );
+  const adjustHeight = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = `${minHeight}px`;
+    const newHeight = Math.max(minHeight, Math.min(el.scrollHeight, maxHeight ?? Infinity));
+    el.style.height = `${newHeight}px`;
+  }, [minHeight, maxHeight]);
 
   useEffect(() => {
     if (textareaRef.current) textareaRef.current.style.height = `${minHeight}px`;
@@ -53,108 +26,326 @@ function useAutoResizeTextarea({ minHeight, maxHeight }: AutoResizeProps) {
   return { textareaRef, adjustHeight };
 }
 
-export default function RuixenMoonChat() {
-  const [message, setMessage] = useState("");
-  const { textareaRef, adjustHeight } = useAutoResizeTextarea({
-    minHeight: 48,
-    maxHeight: 150,
-  });
+// --- Data ---
 
+const AUDIENCE_OPTIONS = [
+  "Auto-detect — AI picks based on topic",
+  "Adult Sunday School — structured teaching format",
+  "Small Group — discussion & reflection",
+  "Sermon / Pulpit — proclamation-style delivery",
+  "Youth Group — accessible & energetic",
+  "Women's Ministry — relational depth",
+  "Men's Ministry — practical & direct",
+  "New Believers — clear & foundational",
+  "Personal Devotion — quiet & intimate",
+];
+
+const TONE_OPTIONS = [
+  "Auto-detect — AI picks based on topic",
+  "Devotional — personal & reflective",
+  "Expository — verse-by-verse depth",
+  "Topical — theme traced through Scripture",
+  "Evangelistic — gospel-centered invitation",
+  "Academic — scholarly & rigorous",
+];
+
+const TRANSLATION_OPTIONS = [
+  "ESV (recommended)",
+  "NIV",
+  "KJV",
+  "NKJV",
+  "NASB",
+  "NLT",
+  "CSB",
+];
+
+const EXPLORE_TOPICS = {
+  PASSAGES: [
+    "Psalm 23 — The Good Shepherd",
+    "John 11 — Lazarus raised",
+    "Romans 8:29-30",
+    "The Sermon on the Mount",
+  ],
+  "PEOPLE & FIGURES": [
+    "Moses",
+    "The disciples",
+    "Angels",
+    "Who is Satan in the Bible?",
+  ],
+  "CORE DOCTRINE": [
+    "The Holy Spirit",
+    "Baptism",
+    "The Ten Commandments",
+    "The Sabbath",
+    "Unclean and clean",
+  ],
+  "QUESTIONS & TOPICS": [
+    "How to pray",
+    "Forgiveness and reconciliation",
+    "What is sin?",
+    "Fear",
+    "End times",
+  ],
+};
+
+// --- Select component ---
+
+interface SelectFieldProps {
+  label: string;
+  options: string[];
+  value: string;
+  onChange: (v: string) => void;
+  hint?: string;
+}
+
+function SelectField({ label, options, value, onChange, hint }: SelectFieldProps) {
   return (
-    <div
-      className="relative w-full h-screen bg-cover bg-center flex flex-col items-center"
-      style={{
-        backgroundImage:
-          "url('https://pub-940ccf6255b54fa799a9b01050e6c227.r2.dev/ruixen_moon_2.png')",
-        backgroundAttachment: "fixed",
-      }}
-    >
-      {/* Centered AI Title */}
-      <div className="flex-1 w-full flex flex-col items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-4xl font-semibold text-white drop-shadow-sm">
-            Ruixen AI
-          </h1>
-          <p className="mt-2 text-neutral-200">
-            Build something amazing — just start typing below.
-          </p>
-        </div>
+    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+      <span className="text-[10px] font-bold tracking-widest text-white/50 uppercase">
+        {label}
+      </span>
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={cn(
+            "w-full appearance-none rounded-lg",
+            "px-3 py-2.5 pr-8 text-sm text-white/90 font-light",
+            "focus:outline-none cursor-pointer transition-all duration-200",
+            "backdrop-blur-sm",
+            "border border-white/15 bg-white/5",
+            "hover:border-white/30 focus:border-white/40",
+          )}
+          style={{ background: "rgba(10,10,10,0.7)" }}
+        >
+          {options.map((opt) => (
+            <option key={opt} value={opt} className="bg-neutral-900 text-white">
+              {opt}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40 pointer-events-none" />
       </div>
-
-      {/* Input Box Section */}
-      <div className="w-full max-w-3xl mb-[20vh]">
-        <div className="relative bg-black/60 backdrop-blur-md rounded-xl border border-neutral-700">
-          <Textarea
-            ref={textareaRef}
-            value={message}
-            onChange={(e) => {
-              setMessage(e.target.value);
-              adjustHeight();
-            }}
-            placeholder="Type your request..."
-            className={cn(
-              "w-full px-4 py-3 resize-none border-none",
-              "bg-transparent text-white text-sm",
-              "focus-visible:ring-0 focus-visible:ring-offset-0",
-              "placeholder:text-neutral-400 min-h-[48px]"
-            )}
-            style={{ overflow: "hidden" }}
-          />
-
-          {/* Footer Buttons */}
-          <div className="flex items-center justify-between p-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-neutral-700"
-            >
-              <Paperclip className="w-4 h-4" />
-            </Button>
-
-            <div className="flex items-center gap-2">
-              <Button
-                disabled
-                className={cn(
-                  "flex items-center gap-1 px-3 py-2 rounded-lg transition-colors",
-                  "bg-neutral-700 text-neutral-400 cursor-not-allowed"
-                )}
-              >
-                <ArrowUpIcon className="w-4 h-4" />
-                <span className="sr-only">Send</span>
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="flex items-center justify-center flex-wrap gap-3 mt-6">
-          <QuickAction icon={<Code2 className="w-4 h-4" />} label="Generate Code" />
-          <QuickAction icon={<Rocket className="w-4 h-4" />} label="Launch App" />
-          <QuickAction icon={<Layers className="w-4 h-4" />} label="UI Components" />
-          <QuickAction icon={<Palette className="w-4 h-4" />} label="Theme Ideas" />
-          <QuickAction icon={<CircleUserRound className="w-4 h-4" />} label="User Dashboard" />
-          <QuickAction icon={<MonitorIcon className="w-4 h-4" />} label="Landing Page" />
-          <QuickAction icon={<FileUp className="w-4 h-4" />} label="Upload Docs" />
-          <QuickAction icon={<ImageIcon className="w-4 h-4" />} label="Image Assets" />
-        </div>
-      </div>
+      {hint && (
+        <span className="text-[10px] text-white/35 italic">{hint}</span>
+      )}
     </div>
   );
 }
 
-interface QuickActionProps {
-  icon: React.ReactNode;
-  label: string;
-}
+// --- Main component ---
 
-function QuickAction({ icon, label }: QuickActionProps) {
+export default function ScripturePathChat() {
+  const [query, setQuery] = useState("");
+  const [focused, setFocused] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [audience, setAudience] = useState(AUDIENCE_OPTIONS[0]);
+  const [tone, setTone] = useState(TONE_OPTIONS[0]);
+  const [translation, setTranslation] = useState(TRANSLATION_OPTIONS[0]);
+
+  const { textareaRef, adjustHeight } = useAutoResizeTextarea({
+    minHeight: 110,
+    maxHeight: 220,
+  });
+
+  const fillQuery = (text: string) => {
+    setQuery(text);
+    requestAnimationFrame(() => {
+      const el = textareaRef.current;
+      if (!el) return;
+      el.style.height = "110px";
+      const newHeight = Math.max(110, Math.min(el.scrollHeight, 220));
+      el.style.height = `${newHeight}px`;
+    });
+  };
+
   return (
-    <Button
-      variant="outline"
-      className="flex items-center gap-2 rounded-full border-neutral-700 bg-black/50 text-neutral-300 hover:text-white hover:bg-neutral-700"
-    >
-      {icon}
-      <span className="text-xs">{label}</span>
-    </Button>
+    <div className="relative w-full min-h-screen bg-black overflow-x-hidden flex flex-col">
+      {loading && <AiLoader />}
+      <AntiGravityCanvas />
+      <Navigation />
+
+      {/* Ambient glow behind the form */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-1"
+        style={{
+          background: "radial-gradient(ellipse 70% 50% at 50% 52%, rgba(255,255,255,0.04) 0%, transparent 70%)",
+        }}
+      />
+
+      {/* Page content */}
+      <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-4 pt-28 pb-16">
+
+        {/* Heading */}
+        <div className="text-center mb-10 max-w-2xl">
+          <h1 className="text-5xl md:text-6xl font-semibold text-white leading-tight tracking-tight">
+            What would you
+            <br />
+            like to{" "}
+            <em
+              style={{
+                fontFamily: "Georgia, 'Times New Roman', serif",
+                fontStyle: "italic",
+                fontWeight: 400,
+                color: "rgba(255,255,255,0.6)",
+              }}
+            >
+              study?
+            </em>
+          </h1>
+          <p className="mt-4 text-white/60 text-base md:text-lg font-light leading-relaxed">
+            Enter a passage, topic, or question —{" "}
+            <span className="text-white/80 font-normal">ScripturePath</span> handles the rest.
+          </p>
+        </div>
+
+        {/* Input card */}
+        <div className="w-full max-w-2xl">
+          <div
+            className="rounded-2xl overflow-hidden transition-all duration-300"
+            style={{
+              border: focused
+                ? "1px solid rgba(255,255,255,0.35)"
+                : "1px solid rgba(255,255,255,0.12)",
+              background: "rgba(12,12,12,0.75)",
+              backdropFilter: "blur(16px)",
+              boxShadow: focused
+                ? "0 0 0 3px rgba(255,255,255,0.04), 0 0 60px rgba(255,255,255,0.07), 0 8px 40px rgba(0,0,0,0.6)"
+                : "0 8px 40px rgba(0,0,0,0.5)",
+            }}
+          >
+            <textarea
+              ref={textareaRef}
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                adjustHeight();
+              }}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              placeholder="e.g. The Sermon on the Mount, forgiveness, John 3:16..."
+              className={cn(
+                "w-full px-6 py-5 resize-none bg-transparent",
+                "text-white text-[15px] leading-relaxed font-light",
+                "placeholder:text-white/30",
+                "focus:outline-none border-none"
+              )}
+              style={{ minHeight: 110, maxHeight: 220, overflow: "hidden" }}
+            />
+          </div>
+
+          {/* Pickers row */}
+          <div className="flex gap-3 mt-4">
+            <SelectField
+              label="Audience"
+              options={AUDIENCE_OPTIONS}
+              value={audience}
+              onChange={setAudience}
+              hint="AI picks based on your topic"
+            />
+            <SelectField
+              label="Tone"
+              options={TONE_OPTIONS}
+              value={tone}
+              onChange={setTone}
+              hint="AI picks based on your topic"
+            />
+            <SelectField
+              label="Translation"
+              options={TRANSLATION_OPTIONS}
+              value={translation}
+              onChange={setTranslation}
+            />
+          </div>
+
+          {/* Generate button */}
+          <style>{`
+            @keyframes border-spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
+          <div className="flex justify-center mt-8">
+            <div className="group relative inline-flex transition-all hover:scale-105 active:scale-95">
+              <div
+                className="relative inline-flex rounded-full overflow-hidden"
+                style={{ padding: "1.5px", boxShadow: "0 0 20px rgba(255,255,255,0.08)" }}
+              >
+                {/* Rotating sharp border line */}
+                <div
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    inset: "-100%",
+                    width: "300%",
+                    height: "300%",
+                    background: "conic-gradient(from 0deg, transparent 72%, rgba(255,255,255,0.95) 79%, transparent 86%)",
+                    animation: "border-spin 3s linear infinite",
+                  }}
+                />
+                {/* Rotating blurred glow copy */}
+                <div
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    inset: "-100%",
+                    width: "300%",
+                    height: "300%",
+                    background: "conic-gradient(from 0deg, transparent 72%, rgba(255,255,255,0.5) 79%, transparent 86%)",
+                    animation: "border-spin 3s linear infinite",
+                    filter: "blur(10px)",
+                  }}
+                />
+                <button
+                  onClick={() => query.trim() && setLoading(true)}
+                  className="relative inline-flex items-center gap-2 px-8 py-4 bg-black text-white rounded-full font-semibold tracking-wide overflow-hidden transition-all hover:bg-neutral-900"
+                >
+                  <span className="relative z-10">Generate Study</span>
+                  <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
+                  <div className="absolute inset-0 bg-white scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 opacity-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Explore a Topic */}
+        <div className="w-full max-w-2xl mt-14">
+          <div className="flex items-center gap-4 mb-7">
+            <div className="flex-1 h-px bg-white/15" />
+            <p className="text-[10px] tracking-[0.2em] font-bold text-white/70 uppercase">
+              Explore a Topic
+            </p>
+            <div className="flex-1 h-px bg-white/15" />
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-8">
+            {Object.entries(EXPLORE_TOPICS).map(([category, items]) => (
+              <div key={category}>
+                <p className="text-[9px] tracking-[0.18em] font-bold text-white/65 uppercase mb-3">
+                  {category}
+                </p>
+                <ul className="space-y-2.5">
+                  {items.map((item) => (
+                    <li key={item}>
+                      <button
+                        onClick={() => fillQuery(item)}
+                        className="text-left text-[13px] text-white/50 hover:text-white/80 transition-colors duration-150 leading-snug group/item"
+                      >
+                        <span className="group-hover/item:underline decoration-white/20 underline-offset-2">
+                          {item}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </div>
   );
 }

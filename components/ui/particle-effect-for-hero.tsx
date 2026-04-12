@@ -49,7 +49,7 @@ const randomRange = (min: number, max: number) => Math.random() * (max - min) + 
 
 // --- Components ---
 
-const AntiGravityCanvas: React.FC = () => {
+export const AntiGravityCanvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [debugInfo, setDebugInfo] = useState({ count: 0, fps: 0 });
@@ -352,26 +352,30 @@ const AntiGravityCanvas: React.FC = () => {
   );
 };
 
-const Navigation: React.FC = () => {
+export const Navigation: React.FC = () => {
     return (
-        <nav className="absolute top-0 left-0 w-full z-20 flex justify-between items-center p-6 md:p-8">
-            <div className="flex items-center space-x-2">
-                 <div className="w-8 h-8 border border-white/25 rounded-sm bg-transparent flex items-center justify-center">
-                    <span className="font-bold text-white text-xs">SP</span>
-                 </div>
-                 <span className="text-white font-medium tracking-wide text-lg">ScripturePath</span>
-            </div>
-            <div className="flex items-center gap-6 ml-auto">
-              <div className="hidden md:flex items-center gap-6 text-sm font-medium text-white/70">
-                <a href="#" className="hover:text-white transition-colors">Trust</a>
-                <a href="#" className="hover:text-white transition-colors">Method</a>
-                <a href="#" className="hover:text-white transition-colors">Structure</a>
-              </div>
+        <nav className="absolute top-6 left-0 right-0 z-20 flex justify-center px-6">
+            <div className="flex items-center bg-[#111111] border border-white/10 rounded-full px-2 py-1.5 backdrop-blur-md shadow-[0_4px_32px_rgba(0,0,0,0.4)]">
+                {/* Logo */}
+                <Link href="/" className="flex items-center gap-1.5 pl-2 pr-4 border-r border-white/10 mr-1 hover:opacity-80 transition-opacity">
+                    <div className="w-5 h-5 border border-white/25 rounded-sm bg-transparent flex items-center justify-center">
+                        <span className="font-bold text-white text-[9px]">SP</span>
+                    </div>
+                    <span className="text-white/80 font-medium text-sm">ScripturePath</span>
+                </Link>
 
-              <button className="relative px-5 py-2 border border-white/25 bg-white/5 text-white/80 font-medium rounded-full text-sm transition-all flex items-center gap-1.5 backdrop-blur-sm shadow-[0_0_12px_rgba(255,255,255,0.08)] hover:shadow-[0_0_24px_rgba(255,255,255,0.18)] hover:border-white/50 hover:text-white">
-                Open App
-              </button>
-        </div>
+                {/* Nav links */}
+                <div className="hidden md:flex items-center">
+                    <a href="#" className="px-4 py-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-full hover:bg-white/5">Trust</a>
+                    <a href="#" className="px-4 py-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-full hover:bg-white/5">Method</a>
+                    <a href="#" className="px-4 py-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-full hover:bg-white/5">Structure</a>
+                </div>
+
+                {/* CTA Button */}
+                <button className="ml-1 px-5 py-2 bg-white text-black font-semibold rounded-full text-sm transition-all flex items-center gap-1.5 hover:bg-white/90 active:scale-95">
+                    Open App <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+            </div>
         </nav>
     )
 }
