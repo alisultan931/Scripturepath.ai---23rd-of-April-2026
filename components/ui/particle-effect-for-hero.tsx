@@ -470,7 +470,7 @@ const HeroContent: React.FC = () => {
 
                 <div className="pt-8 pointer-events-auto flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
 
-                  <div className="group relative inline-flex transition-all hover:scale-105 active:scale-95">
+                  <div className="group relative inline-flex flex-col items-center gap-2 transition-all hover:scale-105 active:scale-95">
                     <div
                       className="relative inline-flex rounded-full overflow-hidden"
                       style={{ padding: '1.5px', boxShadow: '0 0 20px rgba(255,255,255,0.08)' }}
@@ -508,6 +508,7 @@ const HeroContent: React.FC = () => {
                         <div className="absolute inset-0 bg-white scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 opacity-5"></div>
                       </Link>
                     </div>
+                    <span className="text-xs text-white/35 font-normal tracking-wide">Free · No credit card required</span>
                   </div>
 
                   <button
