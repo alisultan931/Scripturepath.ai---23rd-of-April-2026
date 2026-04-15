@@ -119,7 +119,7 @@ export default function SparklesSection() {
 
       {/* 10-Section Study Format — Carousel */}
       <div className="relative z-20 w-full max-w-3xl px-4 mt-24">
-        <p className="text-xs uppercase tracking-widest text-center mb-10" style={{ color: "#E8C992" }}>
+        <p className="text-xs uppercase tracking-widest text-center mb-10" style={{ color: "#D6A85F" }}>
           The 10-Section Study Format
         </p>
 

@@ -245,6 +245,7 @@ const Pricing2 = ({
         section[data-locked]{ color:#f6f7f8; color-scheme:dark }
         .card-animate{opacity:0;transform:translateY(12px);animation:fadeUp .6s ease .25s forwards}
         @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+        @keyframes border-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
       `}</style>
 
       {/* Interactive star canvas */}
@@ -259,7 +260,7 @@ const Pricing2 = ({
       {/* Content */}
       <div className="relative container mx-auto">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">Plans</p>
+          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#D6A85F" }}>Plans</p>
           <h2 className="text-pretty text-4xl font-bold lg:text-6xl">{heading}</h2>
           <p className="text-zinc-400 lg:text-xl">{description}</p>
 
@@ -268,22 +269,22 @@ const Pricing2 = ({
             <Switch checked={isYearly} onCheckedChange={() => setIsYearly(!isYearly)} />
             <span className="flex items-center gap-2">
               Yearly
-              <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-xs font-semibold text-zinc-200">
+              <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-xs font-semibold" style={{ color: "#E8C992" }}>
                 SAVE 16%
               </span>
             </span>
           </div>
 
-          <div className="mt-2 flex flex-col items-stretch gap-6 md:flex-row md:items-start">
+          <div className="mt-2 flex flex-col items-stretch gap-6 md:flex-row md:items-stretch">
             {plans.map((plan, i) => (
-              <div key={plan.id} className="relative pt-7">
+              <div key={plan.id} className="relative pt-7 flex flex-col">
                 {plan.mostPopular && (
-                  <p className="absolute top-0 right-0 text-xs font-semibold uppercase tracking-widest text-zinc-400">
+                  <p className="absolute top-0 right-0 text-xs font-semibold uppercase tracking-widest" style={{ color: "#7EB89A" }}>
                     + Most Popular
                   </p>
                 )}
                 <Card
-                  className={`card-animate flex w-80 flex-col justify-between text-left border-zinc-800 bg-zinc-900/70 backdrop-blur supports-backdrop-filter:bg-zinc-900/60 shadow-[0_0_28px_6px_rgba(255,255,255,0.05)] transition-shadow duration-300 hover:shadow-[0_0_32px_8px_rgba(255,255,255,0.13)]`}
+                  className={`card-animate flex w-80 flex-col justify-between text-left border-zinc-800 bg-zinc-900/70 backdrop-blur supports-backdrop-filter:bg-zinc-900/60 shadow-[0_0_28px_6px_rgba(255,255,255,0.05)] transition-shadow duration-300 hover:shadow-[0_0_32px_8px_rgba(255,255,255,0.13)] h-full`}
                   style={{ animationDelay: `${0.25 + i * 0.08}s` }}
                 >
                   <CardHeader>
@@ -314,7 +315,7 @@ const Pricing2 = ({
                           {feature.disabled ? (
                             <X className="size-4 shrink-0" />
                           ) : (
-                            <CircleCheck className="size-4 shrink-0 text-zinc-400" />
+                            <CircleCheck className="size-4 shrink-0" style={{ color: "#7EB89A" }} />
                           )}
                           <span>{feature.text}</span>
                         </li>
@@ -323,21 +324,51 @@ const Pricing2 = ({
                   </CardContent>
 
                   <CardFooter className="mt-auto">
-                    <Button
-                      asChild
-                      className={`w-full rounded-lg ${
-                        plan.button.variant === "ghost"
-                          ? "bg-transparent text-zinc-400 hover:bg-zinc-800"
-                          : "bg-zinc-100 text-zinc-900 hover:bg-zinc-200"
-                      }`}
-                    >
-                      <a href={plan.button.url}>
-                        {plan.button.text}
-                        {plan.button.variant === "primary" && (
-                          <ArrowRight className="ml-2 size-4" />
-                        )}
-                      </a>
-                    </Button>
+                    {plan.button.variant === "primary" ? (
+                      <div
+                        className="relative w-full rounded-full overflow-hidden"
+                        style={{ padding: "1.5px", boxShadow: "0 0 20px rgba(255,255,255,0.08)" }}
+                      >
+                        <div
+                          aria-hidden="true"
+                          style={{
+                            position: "absolute",
+                            inset: "-100%",
+                            width: "300%",
+                            height: "300%",
+                            background: "conic-gradient(from 0deg, transparent 72%, rgba(255,255,255,0.95) 79%, transparent 86%)",
+                            animation: "border-spin 3s linear infinite",
+                          }}
+                        />
+                        <div
+                          aria-hidden="true"
+                          style={{
+                            position: "absolute",
+                            inset: "-100%",
+                            width: "300%",
+                            height: "300%",
+                            background: "conic-gradient(from 0deg, transparent 72%, rgba(255,255,255,0.5) 79%, transparent 86%)",
+                            animation: "border-spin 3s linear infinite",
+                            filter: "blur(10px)",
+                          }}
+                        />
+                        <a
+                          href={plan.button.url}
+                          className="relative flex w-full items-center justify-center gap-2 px-8 py-3 bg-black text-white rounded-full font-semibold tracking-wide overflow-hidden transition-all hover:bg-neutral-900"
+                        >
+                          <span className="relative z-10">{plan.button.text}</span>
+                          <ArrowRight className="w-4 h-4 relative z-10" />
+                          <div className="absolute inset-0 bg-white scale-x-0 hover:scale-x-100 origin-left transition-transform duration-300 opacity-5" />
+                        </a>
+                      </div>
+                    ) : (
+                      <Button
+                        asChild
+                        className="w-full rounded-lg bg-transparent text-zinc-400 hover:bg-zinc-800"
+                      >
+                        <a href={plan.button.url}>{plan.button.text}</a>
+                      </Button>
+                    )}
                   </CardFooter>
                 </Card>
               </div>

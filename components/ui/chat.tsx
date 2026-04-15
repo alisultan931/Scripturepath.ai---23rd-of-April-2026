@@ -99,7 +99,7 @@ function TranslationSelectField({
 }) {
   return (
     <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-      <span className="text-[10px] font-bold tracking-widest text-white/50 uppercase">
+      <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: "#D6A85F" }}>
         Translation
       </span>
       <div className="relative">
@@ -149,7 +149,7 @@ interface SelectFieldProps {
 function SelectField({ label, options, value, onChange, hint }: SelectFieldProps) {
   return (
     <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-      <span className="text-[10px] font-bold tracking-widest text-white/50 uppercase">
+      <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: "#D6A85F" }}>
         {label}
       </span>
       <div className="relative">
@@ -244,7 +244,7 @@ export default function ScripturePathChat() {
           </h1>
           <p className="mt-4 text-white/60 text-base md:text-lg font-light leading-relaxed">
             Enter a passage, topic, or question —{" "}
-            <span className="text-white/80 font-normal">ScripturePath</span> handles the rest.
+            <span className="font-normal" style={{ color: "#D6A85F" }}>ScripturePath</span> handles the rest.
           </p>
         </div>
 
@@ -360,7 +360,7 @@ export default function ScripturePathChat() {
         <div className="w-full max-w-2xl mt-14">
           <div className="flex items-center gap-4 mb-7">
             <div className="flex-1 h-px bg-white/15" />
-            <p className="text-[10px] tracking-[0.2em] font-bold text-white/70 uppercase">
+            <p className="text-[10px] tracking-[0.2em] font-bold uppercase" style={{ color: "#D6A85F" }}>
               Explore a Topic
             </p>
             <div className="flex-1 h-px bg-white/15" />
@@ -369,7 +369,7 @@ export default function ScripturePathChat() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-8">
             {Object.entries(EXPLORE_TOPICS).map(([category, items]) => (
               <div key={category}>
-                <p className="text-[9px] tracking-[0.18em] font-bold text-white/65 uppercase mb-3">
+                <p className="text-[9px] tracking-[0.18em] font-bold uppercase mb-3" style={{ color: "#E8C992" }}>
                   {category}
                 </p>
                 <ul className="space-y-2.5">

@@ -1,15 +1,43 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { AntiGravityCanvas } from "@/components/ui/particle-effect-for-hero";
 
 const LETTERS = ["A","n","a","l","y","z","i","n","g"," ","y","o","u","r"," ","q","u","e","r","y"];
 
-// Each letter's animation duration = total sweep time + pause before repeat
-// 20 letters × 0.12s step = 2.4s sweep + 1s pause = 3.4s cycle
-const STEP = 0.12;       // seconds between each letter's peak
-const CYCLE = 3.4;       // full cycle duration (sweep + pause)
+const STATUS_LINES = [
+  "Identifying passages, themes, and context…",
+  "Scanning canonical and deuterocanonical texts…",
+  "Cross-referencing parallel scriptures…",
+  "Mapping theological connections…",
+  "Tracing historical and cultural context…",
+  "Analyzing linguistic patterns in original languages…",
+  "Surfacing related commentary and doctrine…",
+  "Reconciling variant manuscript traditions…",
+  "Synthesizing insights across traditions…",
+  "Preparing your personalized study path…",
+];
+
+const STEP  = 0.15;   // gap between each letter's peak (s)
+const CYCLE = 6.0;    // full cycle: 20 × 0.15 = 3s sweep + 3s rest
+
+const STATUS_INTERVAL = 2200; // ms per status line
 
 export default function AiLoader() {
+  const [statusIndex, setStatusIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const tick = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setStatusIndex((i) => (i + 1) % STATUS_LINES.length);
+        setVisible(true);
+      }, 350);
+    }, STATUS_INTERVAL);
+    return () => clearInterval(tick);
+  }, []);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <AntiGravityCanvas />
@@ -18,12 +46,9 @@ export default function AiLoader() {
           width: 360px;
           height: 360px;
           border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
           animation: loader-rotate 2s linear infinite;
-          position: relative;
           background: #000000;
+          flex-shrink: 0;
         }
 
         @keyframes loader-rotate {
@@ -52,39 +77,33 @@ export default function AiLoader() {
 
         .loader-text {
           position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
           display: flex;
           align-items: center;
-          gap: 0.5px;
-          animation: loader-counter-rotate 2s linear infinite;
-        }
-
-        @keyframes loader-counter-rotate {
-          0%   { transform: rotate(-90deg); }
-          50%  { transform: rotate(-270deg); }
-          100% { transform: rotate(-450deg); }
+          gap: 1px;
         }
 
         .loader-letter {
-          color: #ffffff;
-          font-size: 1.25rem;
+          font-size: 1.1rem;
           font-weight: 400;
-          letter-spacing: 0.03em;
-          opacity: 0.3;
-          /* Each letter uses the same total cycle so the sweep restarts cleanly */
-          animation: loader-letter-anim ${CYCLE}s ease-in-out infinite;
+          color: #ffffff;
+          opacity: 0.2;
+          animation: letter-wave ${CYCLE}s ease-in-out infinite;
         }
 
-        @keyframes loader-letter-anim {
-          /* Active window is roughly the first 25% of the cycle */
-          0%   { opacity: 0.3; transform: translateY(0) scale(1); }
-          8%   { opacity: 1;   transform: translateY(-5px) scale(1.18); }
-          18%  { opacity: 0.5; transform: translateY(0) scale(1); }
-          25%, 100% { opacity: 0.3; transform: translateY(0) scale(1); }
+        @keyframes letter-wave {
+          0%        { opacity: 0.2; text-shadow: none; }
+          15%       { opacity: 1;   text-shadow: 0 0 16px rgba(255,255,255,0.35); }
+          32%       { opacity: 0.2; text-shadow: none; }
+          100%      { opacity: 0.2; text-shadow: none; }
         }
       `}</style>
 
       <div className="relative z-10 flex flex-col items-center gap-6">
-        <div className="loader">
+        <div className="relative">
+          <div className="loader" />
           <div className="loader-text">
             {LETTERS.map((letter, i) => (
               <span
@@ -98,8 +117,11 @@ export default function AiLoader() {
           </div>
         </div>
 
-        <p className="text-white/40 text-sm font-light tracking-wide">
-          Identifying passages, themes, and context…
+        <p
+          className="text-white/40 text-sm font-light tracking-wide transition-opacity duration-300"
+          style={{ opacity: visible ? 1 : 0 }}
+        >
+          {STATUS_LINES[statusIndex]}
         </p>
       </div>
     </div>
