@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { MousePointer2, ArrowRight, ChevronDown } from 'lucide-react';
+import { MousePointer2, ArrowRight, ChevronDown, BookOpen } from 'lucide-react';
 
 // --- Types ---
 
@@ -49,11 +49,11 @@ const randomRange = (min: number, max: number) => Math.random() * (max - min) + 
 
 // --- Components ---
 
-export const AntiGravityCanvas: React.FC = () => {
+export const AntiGravityCanvas: React.FC<{ disableMouseInteraction?: boolean }> = ({ disableMouseInteraction = true }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [debugInfo, setDebugInfo] = useState({ count: 0, fps: 0 });
-  
+
   // Mutable state refs to avoid re-renders during animation loop
   const particlesRef = useRef<Particle[]>([]);
   const backgroundParticlesRef = useRef<BackgroundParticle[]>([]);
@@ -78,8 +78,8 @@ export const AntiGravityCanvas: React.FC = () => {
         originY: y,
         vx: 0,
         vy: 0,
-        size: randomRange(1, 2.5), 
-        color: Math.random() > 0.9 ? '#78611E' : '#ffffff',
+        size: randomRange(1, 2.5),
+        color: Math.random() > 0.88 ? '#D6A85F' : '#ffffff',
         angle: Math.random() * Math.PI * 2,
       });
     }
@@ -176,26 +176,29 @@ export const AntiGravityCanvas: React.FC = () => {
     for (let i = 0; i < particles.length; i++) {
       const p = particles[i];
 
-      // 1. Calculate Distance to Mouse
-      const dx = mouse.x - p.x;
-      const dy = mouse.y - p.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      // 2. Mouse Repulsion Force
-      if (mouse.isActive && distance < MOUSE_RADIUS) {
-        const forceDirectionX = dx / distance;
-        const forceDirectionY = dy / distance;
-        const force = (MOUSE_RADIUS - distance) / MOUSE_RADIUS; 
-        
-        const repulsion = force * REPULSION_STRENGTH;
-        p.vx -= forceDirectionX * repulsion * 5; 
-        p.vy -= forceDirectionY * repulsion * 5;
+      // Mouse Repulsion Force
+      if (!disableMouseInteraction && mouse.isActive) {
+        const dx = mouse.x - p.x;
+        const dy = mouse.y - p.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        if (distance < MOUSE_RADIUS) {
+          const forceDirectionX = dx / distance;
+          const forceDirectionY = dy / distance;
+          const force = (MOUSE_RADIUS - distance) / MOUSE_RADIUS;
+          const repulsion = force * REPULSION_STRENGTH;
+          p.vx -= forceDirectionX * repulsion * 5;
+          p.vy -= forceDirectionY * repulsion * 5;
+        }
       }
 
-      // 3. Spring Force (Return to Origin)
+      // Gentle float oscillation
+      p.angle += 0.008;
+      p.vy += Math.sin(p.angle) * 0.018;
+
+      // Spring Force (Return to Origin)
       const springDx = p.originX - p.x;
       const springDy = p.originY - p.y;
-      
+
       p.vx += springDx * RETURN_SPEED;
       p.vy += springDy * RETURN_SPEED;
     }
@@ -272,16 +275,25 @@ export const AntiGravityCanvas: React.FC = () => {
       p.y += p.vy;
 
       // Drawing
+      const velocity = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+      const opacity = Math.min(0.3 + velocity * 0.1, 1);
+
+      if (p.color !== '#ffffff') {
+        // Gold particle: soft glow halo behind it
+        const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3.5);
+        glow.addColorStop(0, `rgba(214, 168, 95, ${opacity * 0.45})`);
+        glow.addColorStop(1, 'rgba(214, 168, 95, 0)');
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = glow;
+        ctx.fill();
+      }
+
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      
-      const velocity = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-      const opacity = Math.min(0.3 + velocity * 0.1, 1); 
-      
-      ctx.fillStyle = p.color === '#ffffff' 
-        ? `rgba(255, 255, 255, ${opacity})` 
-        : p.color;
-      
+      ctx.fillStyle = p.color === '#ffffff'
+        ? `rgba(255, 255, 255, ${opacity})`
+        : `rgba(214, 168, 95, ${opacity})`;
       ctx.fill();
     }
 
@@ -324,8 +336,10 @@ export const AntiGravityCanvas: React.FC = () => {
     return () => cancelAnimationFrame(frameIdRef.current);
   }, [animate]);
 
-  // Mouse Handlers — listen at window level so overlapping UI elements don't block events
+  // Mouse Handlers — only wired up when mouse interaction is enabled
   useEffect(() => {
+    if (disableMouseInteraction) return;
+
     const handleMouseMove = (e: MouseEvent) => {
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
@@ -347,7 +361,7 @@ export const AntiGravityCanvas: React.FC = () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, []);
+  }, [disableMouseInteraction]);
 
   return (
     <div
@@ -364,11 +378,17 @@ export const Navigation: React.FC = () => {
         <nav className="absolute top-6 left-0 right-0 z-20 flex justify-center px-6">
             <div className="flex items-center bg-[#111111] border border-white/10 rounded-full px-2 py-1.5 backdrop-blur-md shadow-[0_4px_32px_rgba(0,0,0,0.4)]">
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-1.5 pl-2 pr-4 border-r border-white/10 mr-1 hover:opacity-80 transition-opacity">
-                    <div className="w-5 h-5 border border-white/25 rounded-sm bg-transparent flex items-center justify-center">
-                        <span className="font-bold text-white text-[9px]">SP</span>
+                <Link href="/" className="flex items-center gap-2 pl-2 pr-4 border-r border-white/10 mr-1 hover:opacity-90 transition-opacity">
+                    <div
+                        className="w-6 h-6 rounded-sm flex items-center justify-center shrink-0"
+                        style={{
+                            background: 'linear-gradient(135deg, #D6A85F 0%, #a87c3a 100%)',
+                            boxShadow: '0 0 8px rgba(214,168,95,0.55), 0 0 2px rgba(214,168,95,0.8)',
+                        }}
+                    >
+                        <BookOpen className="w-3.5 h-3.5 text-black" strokeWidth={2.5} />
                     </div>
-                    <span className="text-white/80 font-medium text-sm">ScripturePath</span>
+                    <span className="font-semibold text-sm" style={{ color: '#D6A85F', textShadow: '0 0 12px rgba(214,168,95,0.45)' }}>ScripturePath</span>
                 </Link>
 
                 {/* Nav links */}
@@ -387,12 +407,23 @@ export const Navigation: React.FC = () => {
     )
 }
 
+const CYCLING_WORDS = ['pastors', 'teachers', 'scholars', 'students'];
+
 const HeroContent: React.FC = () => {
+    const [wordIndex, setWordIndex] = useState(0);
+
+    useEffect(() => {
+        const id = setInterval(() => {
+            setWordIndex(i => (i + 1) % CYCLING_WORDS.length);
+        }, 2000);
+        return () => clearInterval(id);
+    }, []);
+
     return (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none px-4">
             <div className="max-w-4xl w-full text-center space-y-8">
                 <div className="inline-block animate-fade-in-up">
-                    <span className="whitespace-nowrap py-1 px-3 border border-white/20 rounded-full text-[9px] sm:text-xs font-mono text-white/60 tracking-normal sm:tracking-widest uppercase bg-white/5 backdrop-blur-sm">
+                    <span className="whitespace-nowrap py-1 px-3 border border-white/20 rounded-full text-[9px] sm:text-xs font-mono tracking-normal sm:tracking-widest uppercase bg-white/5 backdrop-blur-sm" style={{ color: '#D6A85F' }}>
                         Scripture-First AI · Extended Reasoning · No Hallucinations
                     </span>
                 </div>
@@ -403,14 +434,37 @@ const HeroContent: React.FC = () => {
                 </h1>
 
                 <p className="max-w-2xl mx-auto text-lg md:text-xl text-white/60 font-light leading-relaxed">
-                    A research pipeline built for pastors — not a chatbot.<br/>
+                    A research pipeline built for{" "}
+                    <span
+                        key={wordIndex}
+                        className="inline-block text-white font-semibold animate-fade-cycle"
+                    >
+                        {CYCLING_WORDS[wordIndex]}
+                    </span>
+                    {" "}— not a chatbot.<br/>
                     <strong className="text-white/80 font-semibold">Scripture never altered.</strong>
                 </p>
 
                 <style>{`
+                  @keyframes fade-cycle {
+                    0%   { opacity: 0; transform: translateY(6px); }
+                    15%  { opacity: 1; transform: translateY(0); }
+                    85%  { opacity: 1; transform: translateY(0); }
+                    100% { opacity: 0; transform: translateY(-6px); }
+                  }
+                  .animate-fade-cycle {
+                    animation: fade-cycle 2s ease-in-out forwards;
+                  }
                   @keyframes border-spin {
                     from { transform: rotate(0deg); }
                     to { transform: rotate(360deg); }
+                  }
+                  @keyframes float {
+                    0%, 100% { transform: translateY(0px); }
+                    50%       { transform: translateY(-5px); }
+                  }
+                  .animate-float {
+                    animation: float 3s ease-in-out infinite;
                   }
                 `}</style>
 
@@ -457,14 +511,15 @@ const HeroContent: React.FC = () => {
                   </div>
 
                   <button
-                    className="pointer-events-auto text-white/60 hover:text-white/90 transition-colors text-sm flex items-center gap-1"
+                    className="pointer-events-auto transition-colors text-sm flex items-center gap-1 hover:opacity-70 animate-float"
+                    style={{ color: '#D6A85F' }}
                     onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
                   >
                     See how it works <ChevronDown className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="pt-4 flex items-center justify-center gap-6 text-xs text-white/40 font-medium">
+                <div className="pt-4 flex items-center justify-center gap-6 text-xs font-medium" style={{ color: '#E8C992' }}>
                     <span>ESV · NIV · NASB Verified</span>
                     <span>No Fabricated Theology</span>
                     <span>Christ-Centered Always</span>

@@ -1,7 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Check } from "lucide-react";
+
+const CYCLING_WORDS = ["Pastors", "Teachers", "Scholars", "Students"];
+
 
 const features = [
   {
@@ -39,6 +42,15 @@ const stats = [
 ];
 
 export default function TheologicalIntegritySection() {
+  const [wordIndex, setWordIndex] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setWordIndex(i => (i + 1) % CYCLING_WORDS.length);
+    }, 2000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <section className="bg-black border-t border-white/10 py-24 md:py-32 px-4 selection:bg-white/15 selection:text-white">
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
@@ -46,7 +58,7 @@ export default function TheologicalIntegritySection() {
         {/* Left column — features */}
         <div className="space-y-10">
           <div className="space-y-5">
-            <span className="text-xs font-mono text-white/40 uppercase tracking-widest">
+            <span className="text-xs font-mono uppercase tracking-widest" style={{ color: '#D6A85F' }}>
               Theological Integrity
             </span>
 
@@ -72,7 +84,7 @@ export default function TheologicalIntegritySection() {
                   {/* subtle inner glow */}
                   <div className="absolute inset-0 rounded-full bg-white/5 blur-[2px] opacity-40" />
                   
-                  <Check className="w-3.5 h-3.5 text-white/80 relative z-10" strokeWidth={2.5} />
+                  <Check className="w-3.5 h-3.5 relative z-10" style={{ color: '#7EB89A' }} strokeWidth={2.5} />
                 </div>
                 <div>
                   <p className="text-white/90 font-medium text-sm">
@@ -89,8 +101,27 @@ export default function TheologicalIntegritySection() {
 
         {/* Right column — testimonial + stats */}
         <div className="space-y-5">
-          <span className="text-xs font-mono text-white/40 uppercase tracking-widest">
-            Why Pastors Trust Us
+          <span className="text-xs font-mono uppercase tracking-widest" style={{ color: '#D6A85F' }}>
+            Why{" "}
+            <span
+              key={wordIndex}
+              style={{
+                display: "inline-block",
+                animation: "fade-cycle 2s ease-in-out forwards",
+                color: "#ffffff",
+              }}
+            >
+              {CYCLING_WORDS[wordIndex]}
+            </span>
+            {" "}Trust Us
+            <style>{`
+              @keyframes fade-cycle {
+                0%   { opacity: 0; transform: translateY(4px); }
+                15%  { opacity: 1; transform: translateY(0); }
+                85%  { opacity: 1; transform: translateY(0); }
+                100% { opacity: 0; transform: translateY(-4px); }
+              }
+            `}</style>
           </span>
 
           {/* Testimonial card */}
@@ -122,7 +153,7 @@ export default function TheologicalIntegritySection() {
                 <span className="text-white/60 text-xs font-medium">DC</span>
               </div>
               <div>
-                <p className="text-white/90 font-medium text-sm">
+                <p className="font-medium text-sm" style={{ color: '#E8C992' }}>
                   Pastor David Chen
                 </p>
                 <p className="text-white/40 text-xs font-light">

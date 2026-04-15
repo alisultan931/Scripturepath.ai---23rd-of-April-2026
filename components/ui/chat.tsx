@@ -210,7 +210,7 @@ export default function ScripturePathChat() {
   return (
     <div className="relative w-full min-h-screen bg-black overflow-x-hidden flex flex-col">
       {loading && <AiLoader />}
-      <AntiGravityCanvas />
+      <AntiGravityCanvas disableMouseInteraction />
       <Navigation />
 
       {/* Ambient glow behind the form */}
