@@ -224,8 +224,7 @@ export const Signin: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState<AuthMode>("signin");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const [error, setError] = useState<string | null>(null);
   const mouseRef = useRef({ x: -1000, y: -1000, active: false });
   const router = useRouter();
   const supabase = createClient();
@@ -392,17 +391,7 @@ export const Signin: React.FC = () => {
               )}
 
               {mode === "signin" && (
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 text-white bg-black border-white/20 rounded focus:ring-white/30 focus:ring-2"
-                    />
-                    <span className="text-sm text-white/60">Remember me</span>
-                  </label>
-
+                <div className="flex justify-end">
                   <button
                     type="button"
                     onClick={() => switchMode("forgot")}
