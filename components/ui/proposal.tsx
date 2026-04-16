@@ -405,15 +405,17 @@ export default function ProposalPage({ proposal, onRetry, onStartFromScratch }: 
                 from { transform: rotate(0deg); }
                 to   { transform: rotate(360deg); }
               }
-              .deep-dive-btn:hover {
-                border-color: rgba(214,168,95,0.5) !important;
-                color: rgba(214,168,95,0.85) !important;
-                box-shadow: 0 0 22px rgba(214,168,95,0.3), inset 0 0 14px rgba(214,168,95,0.06) !important;
-              }
-              .action-secondary-btn:hover {
-                border-color: rgba(255,255,255,0.35) !important;
-                color: rgba(255,255,255,0.85) !important;
-                background: rgba(255,255,255,0.05) !important;
+              @media (hover: hover) {
+                .deep-dive-btn:hover {
+                  border-color: rgba(214,168,95,0.5) !important;
+                  color: rgba(214,168,95,0.85) !important;
+                  box-shadow: 0 0 22px rgba(214,168,95,0.3), inset 0 0 14px rgba(214,168,95,0.06) !important;
+                }
+                .action-secondary-btn:hover {
+                  border-color: rgba(255,255,255,0.35) !important;
+                  color: rgba(255,255,255,0.85) !important;
+                  background: rgba(255,255,255,0.05) !important;
+                }
               }
             `}</style>
 
