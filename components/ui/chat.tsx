@@ -189,6 +189,7 @@ export default function ScripturePathChat() {
   const [focused, setFocused] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [inputError, setInputError] = useState(false);
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [audience, setAudience] = useState(AUDIENCE_OPTIONS[0]);
   const [tone, setTone] = useState(TONE_OPTIONS[0]);
@@ -200,7 +201,11 @@ export default function ScripturePathChat() {
   });
 
   const handleGenerate = async () => {
-    if (!query.trim()) return;
+    if (!query.trim()) {
+      setInputError(true);
+      textareaRef.current?.focus();
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
@@ -224,6 +229,7 @@ export default function ScripturePathChat() {
 
   const fillQuery = (text: string) => {
     setQuery(text);
+    setInputError(false);
     requestAnimationFrame(() => {
       const el = textareaRef.current;
       if (!el) return;
@@ -288,7 +294,9 @@ export default function ScripturePathChat() {
           <div
             className="rounded-2xl overflow-hidden transition-all duration-300"
             style={{
-              border: focused
+              border: inputError
+                ? "1px solid rgba(239,68,68,0.6)"
+                : focused
                 ? "1px solid rgba(255,255,255,0.35)"
                 : "1px solid rgba(255,255,255,0.12)",
               background: "rgba(12,12,12,0.75)",
@@ -304,6 +312,7 @@ export default function ScripturePathChat() {
               onChange={(e) => {
                 setQuery(e.target.value);
                 adjustHeight();
+                if (inputError) setInputError(false);
               }}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
@@ -317,6 +326,12 @@ export default function ScripturePathChat() {
               style={{ minHeight: 110, maxHeight: 220, overflow: "hidden" }}
             />
           </div>
+
+          {inputError && (
+            <p className="mt-2 text-sm text-red-400/80 font-light">
+              Please enter a passage, topic, or question before generating.
+            </p>
+          )}
 
           {/* Pickers row */}
           <div className="flex gap-3 mt-4">
