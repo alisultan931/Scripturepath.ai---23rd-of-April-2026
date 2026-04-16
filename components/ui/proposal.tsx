@@ -308,32 +308,34 @@ export default function ProposalPage({ proposal, onRetry, onStartFromScratch }: 
           </div>
 
           {/* ── Action buttons ── */}
-          <div className="flex gap-3">
-            <button
-              onClick={onRetry}
-              className="py-3 px-6 text-sm font-light transition-opacity hover:opacity-70"
-              style={{
-                border: "1px solid rgba(255,255,255,0.08)",
-                color: "rgba(255,255,255,0.3)",
-                background: "transparent",
-                letterSpacing: "0.04em",
-              }}
-            >
-              Try again
-            </button>
-            <button
-              onClick={onStartFromScratch}
-              className="flex items-center gap-2 py-3 px-6 text-sm font-light transition-opacity hover:opacity-70"
-              style={{
-                border: "1px solid rgba(255,255,255,0.08)",
-                color: "rgba(255,255,255,0.3)",
-                background: "transparent",
-                letterSpacing: "0.04em",
-              }}
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Start from Scratch
-            </button>
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-3">
+              <button
+                onClick={onRetry}
+                className="flex-1 py-3 px-4 text-sm font-light transition-opacity hover:opacity-70"
+                style={{
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "rgba(255,255,255,0.3)",
+                  background: "transparent",
+                  letterSpacing: "0.04em",
+                }}
+              >
+                Try again
+              </button>
+              <button
+                onClick={onStartFromScratch}
+                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-light transition-opacity hover:opacity-70"
+                style={{
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "rgba(255,255,255,0.3)",
+                  background: "transparent",
+                  letterSpacing: "0.04em",
+                }}
+              >
+                <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                Start from Scratch
+              </button>
+            </div>
 
             <style>{`
               @keyframes border-spin {
@@ -342,7 +344,7 @@ export default function ProposalPage({ proposal, onRetry, onStartFromScratch }: 
               }
             `}</style>
 
-            <div className="group relative inline-flex flex-1 transition-all hover:scale-[1.02] active:scale-95">
+            <div className="group relative inline-flex w-full transition-all hover:scale-[1.02] active:scale-95">
               <div
                 className="relative inline-flex w-full overflow-hidden"
                 style={{ padding: "1px", boxShadow: "0 0 28px rgba(214,168,95,0.1)" }}
