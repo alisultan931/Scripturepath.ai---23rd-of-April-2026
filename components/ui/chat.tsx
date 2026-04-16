@@ -239,7 +239,7 @@ export default function ScripturePathChat() {
   };
 
   if (proposal) {
-    return <ProposalPage proposal={proposal} onRetry={handleRetry} />;
+    return <ProposalPage proposal={proposal} onRetry={handleRetry} onStartFromScratch={() => setProposal(null)} />;
   }
 
   return (

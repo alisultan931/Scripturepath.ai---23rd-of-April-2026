@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { ArrowRight, BookOpen, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, RotateCcw, Sparkles } from "lucide-react";
 import { Navigation } from "@/components/ui/particle-effect-for-hero";
 
 const STAR_DENSITY = 0.00012;
@@ -28,9 +28,10 @@ export interface Proposal {
 interface ProposalPageProps {
   proposal: Proposal;
   onRetry: () => void;
+  onStartFromScratch: () => void;
 }
 
-export default function ProposalPage({ proposal, onRetry }: ProposalPageProps) {
+export default function ProposalPage({ proposal, onRetry, onStartFromScratch }: ProposalPageProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const starsRef = useRef<Star[]>([]);
@@ -319,6 +320,19 @@ export default function ProposalPage({ proposal, onRetry }: ProposalPageProps) {
               }}
             >
               Try again
+            </button>
+            <button
+              onClick={onStartFromScratch}
+              className="flex items-center gap-2 py-3 px-6 text-sm font-light transition-opacity hover:opacity-70"
+              style={{
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.3)",
+                background: "transparent",
+                letterSpacing: "0.04em",
+              }}
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Start from Scratch
             </button>
 
             <style>{`

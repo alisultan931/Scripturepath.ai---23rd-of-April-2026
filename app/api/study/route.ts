@@ -55,8 +55,11 @@ Bible Translation: ${translation}`,
   }
 
   try {
-    const raw = content.text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
-    const proposal = JSON.parse(raw);
+    const text = content.text;
+    // Extract the first {...} block to handle any surrounding text or markdown
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("No JSON object found");
+    const proposal = JSON.parse(match[0]);
     if (!Array.isArray(proposal.key_verses)) {
       proposal.key_verses = [];
     }
