@@ -242,7 +242,11 @@ export const Signin: React.FC = () => {
         redirectTo: `${window.location.origin}/signin?reset=true`,
       });
       if (error) {
-        setError(error.message);
+        if (error.status === 429 || error.message?.toLowerCase().includes("rate limit")) {
+          setError("Too many requests. Please wait a few minutes before trying again.");
+        } else {
+          setError(error.message);
+        }
         setIsSubmitting(false);
         return;
       }
