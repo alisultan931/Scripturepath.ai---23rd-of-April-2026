@@ -424,7 +424,7 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
         <nav className="absolute top-6 left-0 right-0 z-20 flex justify-center px-6">
             <div className="flex items-center bg-[#111111] border border-white/10 rounded-full px-2 py-1.5 backdrop-blur-md shadow-[0_4px_32px_rgba(0,0,0,0.4)]">
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 pl-2 pr-4 border-r border-white/10 mr-1 hover:opacity-90 transition-opacity">
+                <Link href={firstName ? "/chat" : "/"} className="flex items-center gap-2 pl-2 pr-4 border-r border-white/10 mr-1 hover:opacity-90 transition-opacity">
                     <div
                         className="w-6 h-6 rounded-sm flex items-center justify-center shrink-0"
                         style={{
