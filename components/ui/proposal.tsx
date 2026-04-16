@@ -149,11 +149,11 @@ export default function ProposalPage({ proposal, onRetry }: ProposalPageProps) {
         className="pointer-events-none absolute inset-0 z-1 [background:radial-gradient(80%_60%_at_50%_15%,rgba(255,255,255,0.06),transparent_60%)]"
       />
 
-      <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-6 pt-28 pb-20">
-        <div className="w-full max-w-2xl bg-zinc-900/70 backdrop-blur supports-backdrop-filter:bg-zinc-900/60 shadow-[0_0_28px_6px_rgba(255,255,255,0.05)] border border-zinc-800 p-8">
+      <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-3 sm:px-6 pt-20 sm:pt-28 pb-20">
+        <div className="w-full max-w-2xl bg-zinc-900/70 backdrop-blur supports-backdrop-filter:bg-zinc-900/60 shadow-[0_0_28px_6px_rgba(255,255,255,0.05)] border border-zinc-800 p-5 sm:p-8">
 
           {/* ── Section marker ── */}
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex items-center gap-4 mb-4 sm:mb-6">
             <div style={{ height: "1px", width: "32px", background: "rgba(214,168,95,0.6)" }} />
             <span
               className="text-[10px] font-bold tracking-[0.28em] uppercase"
@@ -169,7 +169,7 @@ export default function ProposalPage({ proposal, onRetry }: ProposalPageProps) {
             style={{
               fontFamily: "Georgia, 'Times New Roman', serif",
               fontWeight: 400,
-              fontSize: "clamp(2.4rem, 6vw, 3.6rem)",
+              fontSize: "clamp(1.65rem, 7vw, 3.6rem)",
               color: "rgba(255,255,255,0.95)",
             }}
           >
@@ -177,7 +177,7 @@ export default function ProposalPage({ proposal, onRetry }: ProposalPageProps) {
           </h1>
 
           {/* ── Scripture ref ── */}
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-center gap-2 mb-4 sm:mb-6">
             <BookOpen className="w-3.5 h-3.5 shrink-0" style={{ color: "rgba(214,168,95,0.7)" }} />
             <span
               style={{
@@ -197,11 +197,11 @@ export default function ProposalPage({ proposal, onRetry }: ProposalPageProps) {
 
           {/* ── Pull quote ── */}
           <p
-            className="mb-6 leading-[1.8]"
+            className="mb-4 sm:mb-6 leading-[1.7] sm:leading-[1.8]"
             style={{
               fontFamily: "Georgia, 'Times New Roman', serif",
               fontStyle: "italic",
-              fontSize: "1.05rem",
+              fontSize: "0.95rem",
               color: "rgba(255,255,255,0.6)",
             }}
           >
@@ -212,7 +212,7 @@ export default function ProposalPage({ proposal, onRetry }: ProposalPageProps) {
           <div className="mb-6" style={{ height: "1px", background: "rgba(255,255,255,0.08)" }} />
 
           {/* ── Metadata footnotes — left-aligned columns ── */}
-          <div className="grid grid-cols-3 gap-8 mb-6">
+          <div className="grid grid-cols-3 gap-3 sm:gap-8 mb-6">
             {[
               { label: "Theme", value: proposal.theme },
               { label: "Audience", value: proposal.audience },
