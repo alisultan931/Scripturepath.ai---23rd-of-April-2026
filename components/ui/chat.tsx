@@ -188,6 +188,7 @@ export default function ScripturePathChat() {
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [audience, setAudience] = useState(AUDIENCE_OPTIONS[0]);
   const [tone, setTone] = useState(TONE_OPTIONS[0]);
@@ -200,6 +201,7 @@ export default function ScripturePathChat() {
 
   const handleGenerate = async () => {
     if (!query.trim()) return;
+    setError(null);
     setLoading(true);
     try {
       const res = await fetch("/api/study", {
@@ -209,10 +211,12 @@ export default function ScripturePathChat() {
       });
       const data = await res.json();
       if (!res.ok || data.error) {
-        console.error("Study generation failed:", data.error ?? res.statusText);
+        setError(data.error ?? "Something went wrong. Please try again.");
         return;
       }
       setProposal(data);
+    } catch {
+      setError("Could not reach the server. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
@@ -335,6 +339,11 @@ export default function ScripturePathChat() {
               onChange={setTranslation}
             />
           </div>
+
+          {/* Error message */}
+          {error && (
+            <p className="mt-4 text-center text-sm text-red-400/80 font-light">{error}</p>
+          )}
 
           {/* Generate button */}
           <style>{`

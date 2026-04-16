@@ -28,20 +28,26 @@ Rules:
 export async function POST(request: Request) {
   const { query, audience, tone, translation } = await request.json();
 
-  const message = await client.messages.create({
-    model: "claude-opus-4-6",
-    max_tokens: 1024,
-    system: SYSTEM_PROMPT,
-    messages: [
-      {
-        role: "user",
-        content: `Topic/Query: ${query}
+  let message;
+  try {
+    message = await client.messages.create({
+      model: "claude-opus-4-6",
+      max_tokens: 1024,
+      system: SYSTEM_PROMPT,
+      messages: [
+        {
+          role: "user",
+          content: `Topic/Query: ${query}
 Target Audience: ${audience}
 Teaching Tone: ${tone}
 Bible Translation: ${translation}`,
-      },
-    ],
-  });
+        },
+      ],
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Anthropic API error";
+    return Response.json({ error: msg }, { status: 502 });
+  }
 
   const content = message.content[0];
   if (content.type !== "text") {
