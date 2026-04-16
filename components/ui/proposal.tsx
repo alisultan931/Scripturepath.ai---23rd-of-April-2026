@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { ArrowRight, BookOpen, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, RefreshCw, RotateCcw, Sparkles } from "lucide-react";
 import { Navigation } from "@/components/ui/particle-effect-for-hero";
 
 const STAR_DENSITY = 0.00012;
@@ -312,7 +312,7 @@ export default function ProposalPage({ proposal, onRetry, onStartFromScratch }: 
             <div className="flex gap-3">
               <button
                 onClick={onRetry}
-                className="flex-1 py-3 px-4 text-sm font-light transition-opacity hover:opacity-70"
+                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-light transition-opacity hover:opacity-70"
                 style={{
                   border: "1px solid rgba(255,255,255,0.08)",
                   color: "rgba(255,255,255,0.3)",
@@ -320,7 +320,8 @@ export default function ProposalPage({ proposal, onRetry, onStartFromScratch }: 
                   letterSpacing: "0.04em",
                 }}
               >
-                Try again
+                <RefreshCw className="w-3.5 h-3.5 shrink-0" />
+              Try again
               </button>
               <button
                 onClick={onStartFromScratch}
@@ -333,7 +334,7 @@ export default function ProposalPage({ proposal, onRetry, onStartFromScratch }: 
                 }}
               >
                 <RotateCcw className="w-3.5 h-3.5 shrink-0" />
-                Start from Scratch
+                Start Over
               </button>
             </div>
 
