@@ -438,7 +438,7 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
                 </Link>
 
                 {/* Nav links */}
-                {showNavLinks && (
+                {showNavLinks && !firstName && (
                 <div className="hidden md:flex items-center">
                     <a href="#" className="px-4 py-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-full hover:bg-white/5">Trust</a>
                     <a href="#" className="px-4 py-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-full hover:bg-white/5">Method</a>
