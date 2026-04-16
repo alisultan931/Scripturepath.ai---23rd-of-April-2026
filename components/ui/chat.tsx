@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { AntiGravityCanvas, Navigation } from "@/components/ui/particle-effect-for-hero";
 import AiLoader from "@/components/ui/ai-loader";
+import ProposalPage, { type Proposal } from "@/components/ui/proposal";
 import { ArrowRight, ChevronDown } from "lucide-react";
 
 // --- Auto-resize textarea hook ---
@@ -187,6 +188,7 @@ export default function ScripturePathChat() {
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [proposal, setProposal] = useState<Proposal | null>(null);
   const [audience, setAudience] = useState(AUDIENCE_OPTIONS[0]);
   const [tone, setTone] = useState(TONE_OPTIONS[0]);
   const [translation, setTranslation] = useState(TRANSLATION_OPTIONS[0].value);
@@ -195,6 +197,26 @@ export default function ScripturePathChat() {
     minHeight: 110,
     maxHeight: 220,
   });
+
+  const handleGenerate = async () => {
+    if (!query.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/study", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, audience, tone, translation }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        console.error("Study generation failed:", data.error ?? res.statusText);
+        return;
+      }
+      setProposal(data);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fillQuery = (text: string) => {
     setQuery(text);
@@ -206,6 +228,15 @@ export default function ScripturePathChat() {
       el.style.height = `${newHeight}px`;
     });
   };
+
+  const handleRetry = async () => {
+    setProposal(null);
+    await handleGenerate();
+  };
+
+  if (proposal) {
+    return <ProposalPage proposal={proposal} onRetry={handleRetry} />;
+  }
 
   return (
     <div className="relative w-full min-h-screen bg-black overflow-x-hidden flex flex-col">
@@ -344,7 +375,7 @@ export default function ScripturePathChat() {
                   }}
                 />
                 <button
-                  onClick={() => query.trim() && setLoading(true)}
+                  onClick={handleGenerate}
                   className="relative inline-flex items-center gap-2 px-8 py-4 bg-black text-white rounded-full font-semibold tracking-wide overflow-hidden transition-all hover:bg-neutral-900"
                 >
                   <span className="relative z-10">Generate Study</span>

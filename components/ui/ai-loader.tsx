@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AntiGravityCanvas } from "@/components/ui/particle-effect-for-hero";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const LETTERS = ["A","n","a","l","y","z","i","n","g"," ","y","o","u","r"," ","q","u","e","r","y"];
 
@@ -23,9 +22,106 @@ const CYCLE = 6.0;    // full cycle: 20 × 0.15 = 3s sweep + 3s rest
 
 const STATUS_INTERVAL = 2200; // ms per status line
 
+const STAR_DENSITY = 0.00012;
+const MOUSE_RADIUS = 160;
+const REPULSION = 5;
+
+interface Star {
+  x: number; y: number;
+  driftX: number; driftY: number;
+  vx: number; vy: number;
+  size: number; alpha: number; phase: number;
+}
+
 export default function AiLoader() {
   const [statusIndex, setStatusIndex] = useState(0);
   const [visible, setVisible] = useState(true);
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const starsRef = useRef<Star[]>([]);
+  const mouseRef = useRef({ x: -1000, y: -1000, active: false });
+  const rafRef = useRef(0);
+
+  const initStars = useCallback((w: number, h: number) => {
+    const count = Math.floor(w * h * STAR_DENSITY);
+    starsRef.current = Array.from({ length: count }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      driftX: (Math.random() - 0.5) * 0.3,
+      driftY: (Math.random() - 0.5) * 0.3,
+      vx: 0, vy: 0,
+      size: Math.random() * 1.4 + 0.4,
+      alpha: Math.random() * 0.35 + 0.15,
+      phase: Math.random() * Math.PI * 2,
+    }));
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const setup = () => {
+      const wrapper = wrapperRef.current;
+      if (!wrapper) return;
+      const rect = wrapper.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = Math.floor(rect.width);
+      const h = Math.floor(rect.height);
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      const ctx = canvas.getContext("2d");
+      if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      initStars(w, h);
+    };
+
+    setup();
+
+    const animate = (time: number) => {
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = canvas.width / dpr;
+      const h = canvas.height / dpr;
+      ctx.clearRect(0, 0, w, h);
+      const mouse = mouseRef.current;
+      for (const s of starsRef.current) {
+        if (mouse.active) {
+          const dx = mouse.x - s.x;
+          const dy = mouse.y - s.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < MOUSE_RADIUS && dist > 0.1) {
+            const force = (MOUSE_RADIUS - dist) / MOUSE_RADIUS;
+            s.vx -= (dx / dist) * force * REPULSION;
+            s.vy -= (dy / dist) * force * REPULSION;
+          }
+        }
+        s.vx += (s.driftX - s.vx) * 0.03;
+        s.vy += (s.driftY - s.vy) * 0.03;
+        s.x += s.vx;
+        s.y += s.vy;
+        if (s.x < 0) s.x = w;
+        if (s.x > w) s.x = 0;
+        if (s.y < 0) s.y = h;
+        if (s.y > h) s.y = 0;
+        const twinkle = Math.sin(time * 0.0018 + s.phase) * 0.5 + 0.5;
+        ctx.globalAlpha = s.alpha * (0.3 + 0.7 * twinkle);
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+    const ro = new ResizeObserver(setup);
+    ro.observe(wrapperRef.current || document.body);
+    return () => { cancelAnimationFrame(rafRef.current); ro.disconnect(); };
+  }, [initStars]);
 
   useEffect(() => {
     const tick = setInterval(() => {
@@ -38,9 +134,23 @@ export default function AiLoader() {
     return () => clearInterval(tick);
   }, []);
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = wrapperRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top, active: true };
+  };
+
+  const handleMouseLeave = () => { mouseRef.current.active = false; };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <AntiGravityCanvas />
+    <div
+      ref={wrapperRef}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 [background:radial-gradient(80%_60%_at_50%_15%,rgba(255,255,255,0.06),transparent_60%)]" />
       <style>{`
         .loader {
           width: 360px;
