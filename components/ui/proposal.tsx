@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, BookOpen, RefreshCw, RotateCcw, Sparkles } from "lucide-react";
 import { Navigation } from "@/components/ui/particle-effect-for-hero";
 
@@ -31,7 +31,23 @@ interface ProposalPageProps {
   onStartFromScratch: () => void;
 }
 
+const DEEP_DIVE_ROWS = [
+  { label: "Observations",   normal: "5–8",    deep: "8–12" },
+  { label: "Key Takeaways",  normal: "3–5",    deep: "5–7" },
+  { label: "Cross References", normal: "2–4",  deep: "4–6" },
+  { label: "Applications",   normal: "3–5",    deep: "5–7 + 3-day plan" },
+  { label: "Discussion Qs",  normal: "5–8",    deep: "8–10 + Deep Dive Qs" },
+  { label: "Study Time",     normal: "~15 min", deep: "~45 min" },
+];
+
+const DEEP_DIVE_ONLY = [
+  { icon: "✦", text: "Scholarly framing & authorship notes" },
+  { icon: "◎", text: "Fresh angles that challenge shallow readings" },
+  { icon: "⊟", text: "3-day mini action plan with daily prayer focus" },
+];
+
 export default function ProposalPage({ proposal, onRetry, onStartFromScratch }: ProposalPageProps) {
+  const [deepDive, setDeepDive] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const starsRef = useRef<Star[]>([]);
@@ -269,11 +285,12 @@ export default function ProposalPage({ proposal, onRetry, onStartFromScratch }: 
           {/* ── Mode buttons ── */}
           <div className="flex gap-3 mb-4">
             <button
-              className="flex-1 flex items-center justify-center gap-2 py-3 text-sm transition-opacity hover:opacity-90"
+              onClick={() => setDeepDive(false)}
+              className="flex-1 flex items-center justify-center gap-2 py-3 text-sm transition-all hover:opacity-90"
               style={{
-                border: "1px solid rgba(255,255,255,0.35)",
-                color: "rgba(255,255,255,0.9)",
-                background: "rgba(255,255,255,0.06)",
+                border: deepDive ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(255,255,255,0.35)",
+                color: deepDive ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.9)",
+                background: deepDive ? "transparent" : "rgba(255,255,255,0.06)",
                 letterSpacing: "0.04em",
               }}
             >
@@ -281,14 +298,15 @@ export default function ProposalPage({ proposal, onRetry, onStartFromScratch }: 
               Normal
             </button>
             <button
-              className="flex-1 flex items-center justify-center gap-2 py-3 text-sm cursor-not-allowed"
+              onClick={() => setDeepDive(true)}
+              className="flex-1 flex items-center justify-center gap-2 py-3 text-sm transition-all deep-dive-btn"
               style={{
-                border: "1px solid rgba(255,255,255,0.06)",
-                color: "rgba(255,255,255,0.2)",
-                background: "transparent",
+                border: deepDive ? "1px solid rgba(214,168,95,0.6)" : "1px solid rgba(255,255,255,0.12)",
+                color: deepDive ? "rgba(214,168,95,0.95)" : "rgba(255,255,255,0.5)",
+                background: deepDive ? "rgba(214,168,95,0.07)" : "transparent",
                 letterSpacing: "0.04em",
+                boxShadow: deepDive ? "0 0 18px rgba(214,168,95,0.25), inset 0 0 12px rgba(214,168,95,0.05)" : "none",
               }}
-              disabled
             >
               <Sparkles className="w-3.5 h-3.5" />
               Deep Dive
@@ -296,10 +314,11 @@ export default function ProposalPage({ proposal, onRetry, onStartFromScratch }: 
                 style={{
                   fontSize: "9px",
                   padding: "2px 5px",
-                  background: "rgba(255,255,255,0.05)",
-                  color: "rgba(255,255,255,0.2)",
+                  background: deepDive ? "rgba(214,168,95,0.15)" : "rgba(255,255,255,0.05)",
+                  color: deepDive ? "rgba(214,168,95,0.8)" : "rgba(255,255,255,0.3)",
                   fontWeight: 600,
                   letterSpacing: "0.12em",
+                  border: deepDive ? "1px solid rgba(214,168,95,0.25)" : "1px solid rgba(255,255,255,0.08)",
                 }}
               >
                 PRO
@@ -307,12 +326,55 @@ export default function ProposalPage({ proposal, onRetry, onStartFromScratch }: 
             </button>
           </div>
 
+          {/* ── Deep Dive info panel ── */}
+          <div
+            className="overflow-hidden transition-all duration-500 ease-in-out"
+            style={{ maxHeight: deepDive ? "600px" : "0px", opacity: deepDive ? 1 : 0, marginBottom: deepDive ? "24px" : "0px" }}
+          >
+            <div style={{ border: "1px solid rgba(214,168,95,0.18)", background: "rgba(214,168,95,0.04)", padding: "16px 20px" }}>
+              {/* Header */}
+              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(214,168,95,0.55)", marginBottom: "14px" }}>
+                Deep Dive gives you more
+              </p>
+
+              {/* Comparison rows */}
+              <div style={{ marginBottom: "16px" }}>
+                {DEEP_DIVE_ROWS.map(({ label, normal, deep }) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between py-2"
+                    style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+                  >
+                    <span style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", minWidth: 0 }}>{label}</span>
+                    <div className="flex items-center gap-4 shrink-0 ml-3">
+                      <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.25)", minWidth: "36px", textAlign: "right" }}>{normal}</span>
+                      <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "rgba(214,168,95,0.9)", textAlign: "right" }}>{deep}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Only in Deep Dive */}
+              <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(214,168,95,0.4)", marginBottom: "10px" }}>
+                Only in Deep Dive
+              </p>
+              <div className="flex flex-col gap-2">
+                {DEEP_DIVE_ONLY.map(({ icon, text }) => (
+                  <div key={text} className="flex items-start gap-2.5">
+                    <span style={{ fontSize: "0.72rem", color: "rgba(214,168,95,0.5)", marginTop: "1px", width: "14px", textAlign: "center", flexShrink: 0 }}>{icon}</span>
+                    <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>{text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* ── Action buttons ── */}
           <div className="flex flex-col gap-3">
             <div className="flex gap-3">
               <button
                 onClick={onRetry}
-                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-light transition-opacity hover:opacity-70"
+                className="action-secondary-btn flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-light transition-all"
                 style={{
                   border: "1px solid rgba(255,255,255,0.08)",
                   color: "rgba(255,255,255,0.3)",
@@ -321,11 +383,11 @@ export default function ProposalPage({ proposal, onRetry, onStartFromScratch }: 
                 }}
               >
                 <RefreshCw className="w-3.5 h-3.5 shrink-0" />
-              Try again
+                Try again
               </button>
               <button
                 onClick={onStartFromScratch}
-                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-light transition-opacity hover:opacity-70"
+                className="action-secondary-btn flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-light transition-all"
                 style={{
                   border: "1px solid rgba(255,255,255,0.08)",
                   color: "rgba(255,255,255,0.3)",
@@ -342,6 +404,16 @@ export default function ProposalPage({ proposal, onRetry, onStartFromScratch }: 
               @keyframes border-spin {
                 from { transform: rotate(0deg); }
                 to   { transform: rotate(360deg); }
+              }
+              .deep-dive-btn:hover {
+                border-color: rgba(214,168,95,0.5) !important;
+                color: rgba(214,168,95,0.85) !important;
+                box-shadow: 0 0 22px rgba(214,168,95,0.3), inset 0 0 14px rgba(214,168,95,0.06) !important;
+              }
+              .action-secondary-btn:hover {
+                border-color: rgba(255,255,255,0.35) !important;
+                color: rgba(255,255,255,0.85) !important;
+                background: rgba(255,255,255,0.05) !important;
               }
             `}</style>
 
@@ -377,7 +449,7 @@ export default function ProposalPage({ proposal, onRetry, onStartFromScratch }: 
                   className="relative inline-flex items-center justify-center gap-2 w-full px-8 py-3 bg-black text-white overflow-hidden transition-all hover:bg-neutral-900"
                   style={{ fontWeight: 500, letterSpacing: "0.08em", fontSize: "0.85rem" }}
                 >
-                  <span className="relative z-10">Generate Study</span>
+                  <span className="relative z-10">{deepDive ? "Generate Deep Dive" : "Generate Study"}</span>
                   <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
                   <div className="absolute inset-0 bg-white scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 opacity-[0.04]" />
                 </button>
