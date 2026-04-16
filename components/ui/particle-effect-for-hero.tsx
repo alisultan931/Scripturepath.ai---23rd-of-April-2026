@@ -2,7 +2,8 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { MousePointer2, ArrowRight, ChevronDown, BookOpen } from 'lucide-react';
+import { MousePointer2, ArrowRight, ChevronDown, BookOpen, LogOut } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 // --- Types ---
 
@@ -373,7 +374,52 @@ export const AntiGravityCanvas: React.FC<{ disableMouseInteraction?: boolean }> 
   );
 };
 
-export const Navigation: React.FC = () => {
+export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks = true }) => {
+    const [firstName, setFirstName] = useState<string | null>(null);
+    const [authLoading, setAuthLoading] = useState(true);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const supabaseRef = useRef(createClient());
+
+    useEffect(() => {
+        const supabase = supabaseRef.current;
+
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user) {
+                const fullName: string | undefined = user.user_metadata?.full_name;
+                setFirstName(fullName ? fullName.split(' ')[0] : user.email?.split('@')[0] ?? null);
+            }
+            setAuthLoading(false);
+        });
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user) {
+                const fullName: string | undefined = session.user.user_metadata?.full_name;
+                setFirstName(fullName ? fullName.split(' ')[0] : session.user.email?.split('@')[0] ?? null);
+            } else {
+                setFirstName(null);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleSignOut = async () => {
+        await supabaseRef.current.auth.signOut();
+        setDropdownOpen(false);
+        window.location.href = '/';
+    };
+
     return (
         <nav className="absolute top-6 left-0 right-0 z-20 flex justify-center px-6">
             <div className="flex items-center bg-[#111111] border border-white/10 rounded-full px-2 py-1.5 backdrop-blur-md shadow-[0_4px_32px_rgba(0,0,0,0.4)]">
@@ -392,16 +438,43 @@ export const Navigation: React.FC = () => {
                 </Link>
 
                 {/* Nav links */}
+                {showNavLinks && (
                 <div className="hidden md:flex items-center">
                     <a href="#" className="px-4 py-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-full hover:bg-white/5">Trust</a>
                     <a href="#" className="px-4 py-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-full hover:bg-white/5">Method</a>
                     <a href="#" className="px-4 py-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-full hover:bg-white/5">Structure</a>
                 </div>
+                )}
 
                 {/* CTA Button */}
-                <button className="ml-1 px-5 py-2 bg-white text-black font-semibold rounded-full text-sm transition-all flex items-center gap-1.5 hover:bg-white/90 active:scale-95">
-                    Open App <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                {authLoading ? (
+                    <div className="ml-1 w-20 h-8 rounded-full bg-white/10 animate-pulse" />
+                ) : firstName ? (
+                    <div ref={dropdownRef} className="relative ml-1">
+                        <button
+                            onClick={() => setDropdownOpen(o => !o)}
+                            className="px-5 py-2 bg-white text-black font-semibold rounded-full text-sm transition-all flex items-center gap-1.5 hover:bg-white/90 active:scale-95"
+                        >
+                            {firstName}
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {dropdownOpen && (
+                            <div className="absolute right-0 mt-2 w-40 bg-[#111111] border border-white/10 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] overflow-hidden">
+                                <button
+                                    onClick={handleSignOut}
+                                    className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-white/5 transition-colors"
+                                >
+                                    <LogOut className="w-3.5 h-3.5" /> Sign out
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <a href="/signin" className="ml-1 px-5 py-2 bg-white text-black font-semibold rounded-full text-sm transition-all flex items-center gap-1.5 hover:bg-white/90 active:scale-95">
+                        Sign in <ArrowRight className="w-3.5 h-3.5" />
+                    </a>
+                )}
             </div>
         </nav>
     )
@@ -411,12 +484,24 @@ const CYCLING_WORDS = ['pastors', 'teachers', 'scholars', 'students'];
 
 const HeroContent: React.FC = () => {
     const [wordIndex, setWordIndex] = useState(0);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
         const id = setInterval(() => {
             setWordIndex(i => (i + 1) % CYCLING_WORDS.length);
         }, 2000);
         return () => clearInterval(id);
+    }, []);
+
+    useEffect(() => {
+        const supabase = createClient();
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            setIsLoggedIn(!!user);
+        });
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setIsLoggedIn(!!session?.user);
+        });
+        return () => subscription.unsubscribe();
     }, []);
 
     return (
@@ -502,7 +587,7 @@ const HeroContent: React.FC = () => {
                       />
 
                       {/* BUTTON */}
-                      <Link href="/chat" className="relative inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-black text-white rounded-full font-semibold tracking-wide overflow-hidden transition-all hover:bg-neutral-900">
+                      <Link href={isLoggedIn ? "/chat" : "/signin"} className="relative inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-4 bg-black text-white rounded-full font-semibold tracking-wide overflow-hidden transition-all hover:bg-neutral-900">
                         <span className="relative z-10">Generate Your First Study</span>
                         <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
                         <div className="absolute inset-0 bg-white scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 opacity-5"></div>

@@ -2,12 +2,25 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export const Component = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const sectionRef = useRef<HTMLElement | null>(null);
   const ripples = useRef<{ x: number; y: number; radius: number; alpha: number }[]>([]);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsLoggedIn(!!user);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session?.user);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -121,7 +134,7 @@ export const Component = () => {
               }}
             />
             <Link
-              href="/chat"
+              href={isLoggedIn ? "/chat" : "/signin"}
               className="relative inline-flex items-center gap-2 px-8 py-4 bg-black text-white rounded-full font-semibold tracking-wide overflow-hidden transition-all hover:bg-neutral-900"
             >
               <span className="relative z-10">Generate Your First Study</span>
