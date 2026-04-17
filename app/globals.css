@@ -168,3 +168,52 @@
     @apply font-sans;
   }
 }
+
+/* Study page HTML content typography */
+.study-html h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
+}
+.study-html p {
+  font-size: 0.925rem;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.75;
+  margin-bottom: 0.75rem;
+}
+.study-html ul, .study-html ol {
+  padding-left: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+.study-html li {
+  font-size: 0.925rem;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.75;
+  margin-bottom: 0.4rem;
+}
+.study-html strong {
+  color: rgba(255,255,255,0.9);
+  font-weight: 600;
+}
+.study-html em {
+  color: #D6A85F;
+  font-style: normal;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.study-html blockquote {
+  border-left: 3px solid #D6A85F;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  background: rgba(214,168,95,0.06);
+  border-radius: 0 0.5rem 0.5rem 0;
+  font-size: 0.975rem;
+  color: rgba(255,255,255,0.85);
+  font-style: italic;
+  line-height: 1.7;
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { AntiGravityCanvas, Navigation } from "@/components/ui/particle-effect-for-hero";
 import AiLoader from "@/components/ui/ai-loader";
@@ -185,6 +186,7 @@ function SelectField({ label, options, value, onChange, hint }: SelectFieldProps
 // --- Main component ---
 
 export default function ScripturePathChat() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -244,8 +246,29 @@ export default function ScripturePathChat() {
     await handleGenerate();
   };
 
+  const handleGenerateStudy = (depth: "normal" | "deep_dive") => {
+    if (!proposal) return;
+    const params = new URLSearchParams({
+      title: proposal.title,
+      passage: proposal.scripture_ref,
+      description: proposal.summary,
+      theme: proposal.theme,
+      audience: proposal.audience,
+      tone: proposal.tone,
+      depth,
+    });
+    router.push(`/study?${params.toString()}`);
+  };
+
   if (proposal) {
-    return <ProposalPage proposal={proposal} onRetry={handleRetry} onStartFromScratch={() => setProposal(null)} />;
+    return (
+      <ProposalPage
+        proposal={proposal}
+        onRetry={handleRetry}
+        onStartFromScratch={() => setProposal(null)}
+        onGenerate={handleGenerateStudy}
+      />
+    );
   }
 
   return (
