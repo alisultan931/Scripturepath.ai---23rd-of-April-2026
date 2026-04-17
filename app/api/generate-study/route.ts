@@ -415,9 +415,7 @@ async function fetchBibleChunk(query: string): Promise<string> {
 }
 
 async function fetchPassageText(passage: string): Promise<string> {
-  const bookQuery = passage.toLowerCase().replace(/\s+/g, "+");
-
-  // Detect cross-chapter range with verse numbers: "Book C1:V1-C2:V2"
+  // Cross-chapter verse range: "Book C1:V1-C2:V2"
   const versedRange = passage.match(/^(.+?)\s+(\d+):(\d+)\s*[-–]\s*(\d+):(\d+)$/);
   if (versedRange) {
     const [, book, sc, sv, ec, ev] = versedRange;
@@ -426,20 +424,17 @@ async function fetchPassageText(passage: string): Promise<string> {
     const bq = book.toLowerCase().replace(/\s+/g, "+");
 
     if (endChap - startChap > 1) {
+      // Fetch each chapter individually to avoid multi-boundary 400 errors.
+      // Middle chapters are fetched whole; last chapter uses :1-C:V.
       const chunks: string[] = [];
-      let c = startChap;
-      while (c <= endChap) {
-        const nextC = c + 1;
-        const vStart = c === startChap ? startVerse : 1;
-        if (nextC > endChap) {
-          chunks.push(`${bq}+${c}:${vStart}-${c}:${endVerse}`);
-          break;
-        } else if (nextC === endChap) {
-          chunks.push(`${bq}+${c}:${vStart}-${nextC}:${endVerse}`);
-          break;
+      for (let c = startChap; c <= endChap; c++) {
+        if (c === startChap && startVerse > 1) {
+          // Partial first chapter — fetch whole chapter for simplicity
+          chunks.push(`${bq}+${c}`);
+        } else if (c === endChap) {
+          chunks.push(`${bq}+${c}:1-${c}:${endVerse}`);
         } else {
-          chunks.push(`${bq}+${c}:${vStart}-${nextC}:200`);
-          c = nextC + 1;
+          chunks.push(`${bq}+${c}`);
         }
       }
       const parts = await Promise.all(chunks.map(fetchBibleChunk));
@@ -447,7 +442,7 @@ async function fetchPassageText(passage: string): Promise<string> {
     }
   }
 
-  // Detect chapter-only range: "Book C1-C2"
+  // Chapter-only range: "Book C1-C2"
   const chapterRange = passage.match(/^(.+?)\s+(\d+)\s*[-–]\s*(\d+)$/);
   if (chapterRange) {
     const [, book, sc, ec] = chapterRange;
@@ -455,27 +450,15 @@ async function fetchPassageText(passage: string): Promise<string> {
     const bq = book.toLowerCase().replace(/\s+/g, "+");
 
     if (endChap - startChap > 1) {
-      const chunks: string[] = [];
-      let c = startChap;
-      while (c <= endChap) {
-        const nextC = c + 1;
-        if (nextC > endChap) {
-          chunks.push(`${bq}+${c}`);
-          break;
-        } else if (nextC === endChap) {
-          chunks.push(`${bq}+${c}-${nextC}`);
-          break;
-        } else {
-          chunks.push(`${bq}+${c}-${nextC}`);
-          c = nextC + 1;
-        }
-      }
+      const chunks = Array.from({ length: endChap - startChap + 1 }, (_, i) =>
+        `${bq}+${startChap + i}`
+      );
       const parts = await Promise.all(chunks.map(fetchBibleChunk));
       return parts.join("\n");
     }
   }
 
-  return fetchBibleChunk(bookQuery);
+  return fetchBibleChunk(passage.toLowerCase().replace(/\s+/g, "+"));
 }
 
 export async function POST(request: Request) {
