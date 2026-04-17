@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      const redirectTo = next ?? (data.user ? "/auth/reset-password" : "/chat");
+      const redirectTo = next ?? "/chat";
       return NextResponse.redirect(`${origin}${redirectTo}`);
     }
   }
