@@ -238,7 +238,7 @@ const [error, setError] = useState<string | null>(null);
 
     if (mode === "forgot") {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/signin?reset=true`,
+        redirectTo: `${window.location.origin}/auth/callback`,
       });
       if (error) {
         if (error.status === 429 || error.message?.toLowerCase().includes("rate limit")) {

@@ -9,7 +9,8 @@
       "WebFetch(domain:21st.dev)",
       "Bash(xargs grep *)",
       "Skill(claude-api)",
-      "Skill(claude-api:*)"
+      "Skill(claude-api:*)",
+      "Bash(xargs ls *)"
     ]
   }
 }

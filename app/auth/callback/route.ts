@@ -15,5 +15,14 @@ export async function GET(request: Request) {
     }
   }
 
+  if (token_hash && type === "recovery") {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.verifyOtp({ type: "recovery", token_hash });
+
+    if (!error) {
+      return NextResponse.redirect(`${origin}/auth/reset-password`);
+    }
+  }
+
   return NextResponse.redirect(`${origin}/signin?error=invalid_confirmation_link`);
 }
