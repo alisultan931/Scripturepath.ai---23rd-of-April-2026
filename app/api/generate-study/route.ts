@@ -402,24 +402,92 @@ Response format — valid JSON only:
 }`;
 }
 
+async function fetchBibleChunk(query: string): Promise<string> {
+  const res = await fetch(`https://bible-api.com/${query}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`bible-api.com ${res.status}: ${body.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  const text = data.text ?? data.verses?.map((v: { text: string }) => v.text).join(" ") ?? "";
+  if (!text) throw new Error("Empty passage text from bible-api.com");
+  return text;
+}
+
+async function fetchPassageText(passage: string): Promise<string> {
+  const bookQuery = passage.toLowerCase().replace(/\s+/g, "+");
+
+  // Detect cross-chapter range with verse numbers: "Book C1:V1-C2:V2"
+  const versedRange = passage.match(/^(.+?)\s+(\d+):(\d+)\s*[-–]\s*(\d+):(\d+)$/);
+  if (versedRange) {
+    const [, book, sc, sv, ec, ev] = versedRange;
+    const startChap = parseInt(sc), startVerse = parseInt(sv);
+    const endChap = parseInt(ec), endVerse = parseInt(ev);
+    const bq = book.toLowerCase().replace(/\s+/g, "+");
+
+    if (endChap - startChap > 1) {
+      const chunks: string[] = [];
+      let c = startChap;
+      while (c <= endChap) {
+        const nextC = c + 1;
+        const vStart = c === startChap ? startVerse : 1;
+        if (nextC > endChap) {
+          chunks.push(`${bq}+${c}:${vStart}-${c}:${endVerse}`);
+          break;
+        } else if (nextC === endChap) {
+          chunks.push(`${bq}+${c}:${vStart}-${nextC}:${endVerse}`);
+          break;
+        } else {
+          chunks.push(`${bq}+${c}:${vStart}-${nextC}:200`);
+          c = nextC + 1;
+        }
+      }
+      const parts = await Promise.all(chunks.map(fetchBibleChunk));
+      return parts.join("\n");
+    }
+  }
+
+  // Detect chapter-only range: "Book C1-C2"
+  const chapterRange = passage.match(/^(.+?)\s+(\d+)\s*[-–]\s*(\d+)$/);
+  if (chapterRange) {
+    const [, book, sc, ec] = chapterRange;
+    const startChap = parseInt(sc), endChap = parseInt(ec);
+    const bq = book.toLowerCase().replace(/\s+/g, "+");
+
+    if (endChap - startChap > 1) {
+      const chunks: string[] = [];
+      let c = startChap;
+      while (c <= endChap) {
+        const nextC = c + 1;
+        if (nextC > endChap) {
+          chunks.push(`${bq}+${c}`);
+          break;
+        } else if (nextC === endChap) {
+          chunks.push(`${bq}+${c}-${nextC}`);
+          break;
+        } else {
+          chunks.push(`${bq}+${c}-${nextC}`);
+          c = nextC + 1;
+        }
+      }
+      const parts = await Promise.all(chunks.map(fetchBibleChunk));
+      return parts.join("\n");
+    }
+  }
+
+  return fetchBibleChunk(bookQuery);
+}
+
 export async function POST(request: Request) {
   const { title, passage, description, theme, audience, tone, depth } =
     await request.json();
 
-  // Fetch KJV passage text from bible-api.com
   const passageQuery = passage.toLowerCase().replace(/\s+/g, "+");
   const passageUrl = `https://bible-api.com/${passageQuery}`;
 
   let passageText: string;
   try {
-    const bibleRes = await fetch(passageUrl);
-    if (!bibleRes.ok) {
-      const body = await bibleRes.text().catch(() => "");
-      throw new Error(`bible-api.com ${bibleRes.status}: ${body.slice(0, 200)}`);
-    }
-    const bibleData = await bibleRes.json();
-    passageText = bibleData.text ?? bibleData.verses?.map((v: { text: string }) => v.text).join(" ") ?? "";
-    if (!passageText) throw new Error(`Empty passage text from bible-api.com. Response keys: ${Object.keys(bibleData).join(", ")}`);
+    passageText = await fetchPassageText(passage);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Failed to fetch passage";
     console.error("[generate-study] bible-api.com error:", msg);
