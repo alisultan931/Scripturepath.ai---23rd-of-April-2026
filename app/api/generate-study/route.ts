@@ -99,22 +99,20 @@ Purpose: Instant orientation panel before the study begins.
 
 Return an object with exactly two fields: key_facts (a JSON object) and html_content (an HTML string).
 
-key_facts must contain exactly these 8 fields:
+key_facts must contain exactly these 11 fields:
   book_date            — Date range using "commonly dated to" phrasing
   book_date_confidence — One of: "high", "medium", or "cautious"
   traditional_attribution — Authorship using "traditionally attributed to" phrasing; if disputed: "varies by tradition"
   tradition_note       — Note if authorship is debated, or null if not
-  key_figure           — Central person(s) in this passage
-  genre                — One of: Narrative / Epistle / Gospel / Prophecy / Wisdom / Law / Apocalyptic
+  key_figure           — Central person(s) in this passage (comma-separated if multiple)
+  genre                — Pipe-separated genres matching the books: e.g. "Law | Prophecy | Gospel | Epistle" or single e.g. "Epistle"
+  book_display         — Human-readable book label: if single book use "BookName (Genre)" e.g. "Romans (Epistle)"; if multiple books use "Multiple books: Book1 (Genre1), Book2 (Genre2), ..."
+  key_theme            — One-line core message specific to this passage — not generic
+  read_time            — "~15 minutes" (normal depth) or "~45 minutes" (deep_dive depth)
   source_label         — Always "bible-api.com"
   passage_url          — "${passageUrl}"
 
-html_content must contain:
-  - ${passage} displayed prominently in an <h3> tag
-  - One sentence placing this passage in the Bible's big story (Creation → Fall → Redemption → Restoration)
-  - Key theme: one-line core message specific to ${passage} — not generic
-  - Description from ${description}
-  - Read time: "~15 min" (normal) or "~45 min" (deep_dive)
+html_content must contain exactly ONE sentence placing this passage in the Bible's big story (Creation → Fall → Redemption → Restoration). Wrap it in a single <p> tag. No heading, no theme, no read time — just that one sentence.
 
 Rules: Never invent authorship or dates. Use "traditionally attributed to" and "commonly dated to". If authorship is debated, say "varies by tradition" and add a tradition_note.
 
@@ -231,7 +229,7 @@ Return as an HTML string with <ol> for numbered observations.
 
 SELF-CHECK — VERIFY EVERY POINT BEFORE RETURNING
 
-1. Does section_01 contain BOTH key_facts (with all 8 required fields) AND html_content?
+1. Does section_01 contain BOTH key_facts (with all 11 required fields including book_display, key_theme, read_time) AND html_content (single big-story sentence)?
 2. Does section_02 contain "Jesus" addressed directly? (REGEX-CHECKED)
 3. Does section_03 cover Literary Context, Historical Setting, Why It Matters Today?
 4. Does section_04 include EVERY verse verbatim with the Three-Pass Reading Plan?
@@ -249,11 +247,14 @@ Response format — valid JSON only:
       "traditional_attribution": "traditionally attributed to ...",
       "tradition_note": "... or null",
       "key_figure": "...",
-      "genre": "...",
+      "genre": "Law | Prophecy | Gospel | Epistle",
+      "book_display": "Multiple books: Exodus (Law), Isaiah (Prophecy), ...",
+      "key_theme": "...",
+      "read_time": "~15 minutes",
       "source_label": "bible-api.com",
       "passage_url": "${passageUrl}"
     },
-    "html_content": "<h3>...</h3><p>...</p>"
+    "html_content": "<p>One sentence placing this passage in the Bible's big story.</p>"
   },
   "section_02": "<p>Lord Jesus, ...</p>",
   "section_03": "<h3>Literary Context</h3><p>...</p>",

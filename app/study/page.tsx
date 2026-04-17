@@ -2,6 +2,15 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import {
+  BookOpen,
+  Tag,
+  User,
+  Calendar,
+  Users,
+  Sparkles,
+  Clock,
+} from "lucide-react";
 import AiLoader from "@/components/ui/ai-loader";
 import { Navigation } from "@/components/ui/particle-effect-for-hero";
 
@@ -12,6 +21,9 @@ interface KeyFacts {
   tradition_note: string | null;
   key_figure: string;
   genre: string;
+  book_display: string;
+  key_theme: string;
+  read_time: string;
   source_label: string;
   passage_url: string;
 }
@@ -42,59 +54,102 @@ const SECTION_LABELS = [
   "Summary & Closing Prayer",
 ];
 
-function KeyFactsBadge({ confidence }: { confidence: "high" | "medium" | "cautious" }) {
-  const colors = {
-    high: "bg-emerald-900/40 text-emerald-400 border-emerald-800/50",
-    medium: "bg-amber-900/40 text-amber-400 border-amber-800/50",
-    cautious: "bg-red-900/40 text-red-400 border-red-800/50",
-  };
+function FactRow({
+  icon,
+  label,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
-    <span className={`text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 rounded border ${colors[confidence]}`}>
-      {confidence}
-    </span>
+    <div className="flex gap-4 py-3.5 border-b border-white/5 last:border-0">
+      <div className="flex items-start gap-2 w-32 flex-shrink-0 pt-0.5">
+        <span className="text-white/30 flex-shrink-0 mt-px">{icon}</span>
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-white/35 leading-tight">
+          {label}
+        </span>
+      </div>
+      <div className="flex-1 text-sm text-white/70 leading-relaxed">{children}</div>
+    </div>
   );
 }
 
-function Section01({ data }: { data: StudyData["section_01"] }) {
+function Section01({ data, passage }: { data: StudyData["section_01"]; passage: string }) {
   const { key_facts: kf, html_content } = data;
+  const genres = kf.genre.split(/[|,/]/).map((g) => g.trim()).filter(Boolean);
+
   return (
-    <div className="space-y-6">
-      <div
-        className="study-html"
-        dangerouslySetInnerHTML={{ __html: html_content }}
-      />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border border-white/10 rounded-xl p-4 bg-white/2">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[10px] uppercase tracking-widest text-white/40 font-semibold">Date</span>
-          <span className="text-sm text-white/80">{kf.book_date}</span>
-          <KeyFactsBadge confidence={kf.book_date_confidence} />
+    <div className="space-y-5">
+      {/* Header card */}
+      <div className="border border-white/10 rounded-xl p-4 bg-white/[0.02] flex gap-3">
+        <BookOpen size={18} className="text-[#D6A85F]/60 flex-shrink-0 mt-0.5" />
+        <div>
+          <p className="text-[#D6A85F] font-semibold text-sm leading-snug mb-1">
+            {passage}
+          </p>
+          <p className="text-xs text-white/35 leading-snug">
+            {kf.book_display}
+            {genres.length > 0 && (
+              <> &middot; {genres.join(" | ")}</>
+            )}
+          </p>
         </div>
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[10px] uppercase tracking-widest text-white/40 font-semibold">Authorship</span>
-          <span className="text-sm text-white/80">{kf.traditional_attribution}</span>
+      </div>
+
+      {/* Big Story */}
+      <div>
+        <p className="text-[10px] uppercase tracking-widest text-white/30 font-semibold mb-2">
+          The Big Story
+        </p>
+        <div
+          className="text-sm text-white/65 leading-relaxed [&>p]:m-0"
+          dangerouslySetInnerHTML={{ __html: html_content }}
+        />
+      </div>
+
+      {/* Fact rows */}
+      <div className="border border-white/8 rounded-xl px-4 bg-white/[0.015]">
+        <FactRow icon={<BookOpen size={13} />} label="Book">
+          {kf.book_display}
+        </FactRow>
+        <FactRow icon={<Tag size={13} />} label="Genre">
+          <div className="flex flex-wrap gap-1.5">
+            {genres.map((g) => (
+              <span
+                key={g}
+                className="px-2 py-0.5 rounded text-xs text-[#D6A85F] border"
+                style={{ background: "rgba(214,168,95,0.08)", borderColor: "rgba(214,168,95,0.25)" }}
+              >
+                {g}
+              </span>
+            ))}
+          </div>
+        </FactRow>
+        <FactRow icon={<User size={13} />} label="Author">
+          {kf.traditional_attribution}
           {kf.tradition_note && (
-            <span className="text-xs text-white/40 italic">{kf.tradition_note}</span>
+            <span className="text-white/40 italic"> — {kf.tradition_note}</span>
           )}
-        </div>
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[10px] uppercase tracking-widest text-white/40 font-semibold">Key Figure</span>
-          <span className="text-sm text-white/80">{kf.key_figure}</span>
-        </div>
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[10px] uppercase tracking-widest text-white/40 font-semibold">Genre</span>
-          <span className="text-sm text-white/80">{kf.genre}</span>
-        </div>
-        <div className="flex flex-col gap-0.5 sm:col-span-2">
-          <span className="text-[10px] uppercase tracking-widest text-white/40 font-semibold">Source</span>
-          <a
-            href={kf.passage_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-[#D6A85F] hover:underline break-all"
+        </FactRow>
+        <FactRow icon={<Calendar size={13} />} label="Date">
+          <span
+            className="inline rounded px-1.5 py-0.5 text-white/80"
+            style={{ background: "rgba(180,120,30,0.18)" }}
           >
-            {kf.passage_url}
-          </a>
-        </div>
+            {kf.book_date}
+          </span>
+        </FactRow>
+        <FactRow icon={<Users size={13} />} label="Key Figures">
+          {kf.key_figure}
+        </FactRow>
+        <FactRow icon={<Sparkles size={13} />} label="Key Theme">
+          {kf.key_theme}
+        </FactRow>
+        <FactRow icon={<Clock size={13} />} label="Read Time">
+          {kf.read_time}
+        </FactRow>
       </div>
     </div>
   );
@@ -109,10 +164,10 @@ function HtmlSection({ html }: { html: string }) {
   );
 }
 
-function StudyContent({ study, title, depth }: { study: StudyData; title: string; depth: string }) {
+function StudyContent({ study, title, passage, depth }: { study: StudyData; title: string; passage: string; depth: string }) {
   const router = useRouter();
   const sections = [
-    { label: SECTION_LABELS[0], content: <Section01 data={study.section_01} /> },
+    { label: SECTION_LABELS[0], content: <Section01 data={study.section_01} passage={passage} /> },
     { label: SECTION_LABELS[1], content: <HtmlSection html={study.section_02} /> },
     { label: SECTION_LABELS[2], content: <HtmlSection html={study.section_03} /> },
     { label: SECTION_LABELS[3], content: <HtmlSection html={study.section_04} /> },
@@ -221,7 +276,7 @@ function StudyPageInner() {
 
   if (!study) return <AiLoader />;
 
-  return <StudyContent study={study} title={title} depth={depth} />;
+  return <StudyContent study={study} title={title} passage={passage} depth={depth} />;
 }
 
 export default function StudyPage() {
