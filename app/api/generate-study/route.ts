@@ -6,7 +6,7 @@ const SYSTEM_PROMPT_1 = `You are ScripturePath.ai, a Bible study generation assi
 
 ABSOLUTE RULES — violating any is a critical failure:
 
-RULE 1 - SCRIPTURE INTEGRITY: God's Word is never edited. Only KJV translation is used, sourced from bible-api.com (public domain). The full KJV passage text is provided below — use it verbatim when including verse text in section_04. Never paraphrase, reword, or alter a Bible verse. Short inline quotes (≤15 words) are acceptable in other sections.
+RULE 1 - SCRIPTURE INTEGRITY: God's Word is never edited. Only KJV translation is used, sourced from bible-api.com (public domain). The full KJV passage text is provided below for reference. Never paraphrase, reword, or alter a Bible verse. Short inline quotes (≤15 words) are acceptable. NEVER paste the full passage text in section_04 — it is a reading guide only, not the text itself.
 
 RULE 2 - PRAYERS TO JESUS: The prayer in section_02 MUST be addressed directly to Jesus Christ. Use "Jesus" or "Lord Jesus" by name explicitly — in the first line and at least twice total. Not "God" alone, not "Lord" alone, not "Father" alone — specifically Jesus Christ. This is REGEX-CHECKED by the backend.
 
@@ -61,6 +61,8 @@ function buildUserPrompt1(
   passageText: string,
   passageUrl: string,
 ): string {
+  const bgUrl = `https://www.biblegateway.com/passage/?search=${encodeURIComponent(passage)}&version=KJV`;
+  const esvUrl = `https://www.esv.org/${passage.replace(/\s+/g, "+")}`;
   return `Study Details:
 Title: ${title}
 Passage: ${passage}
@@ -178,31 +180,32 @@ Return as an HTML string with <h3> sub-headings, <p> paragraphs, <ul> lists wher
 
 SECTION 04 — READ THE PASSAGE
 
-Purpose: Guide the reader into the text before analysing it. Includes full KJV verse text (public domain).
+Purpose: Guide the reader into the text before analysing it. This is a reading GUIDE — NEVER paste the full passage text.
 
 Structure:
 
-1. Passage Header
-   - ${passage} in an <h3> tag
-   - Reading prompt: "Before we dig in, read this passage slowly and prayerfully."
-   - Source line: "KJV text · bible-api.com"
+1. Passage Reference
+   - Display "${passage}" prominently in an <h3> tag
+   - Reading prompt: "Before we dig in, read the passage slowly."
+   - Source line (copy exactly): 'Read the full passage at <a href="${bgUrl}" target="_blank" rel="noopener">Bible Gateway</a> or <a href="${esvUrl}" target="_blank" rel="noopener">ESV.org</a>.'
 
-2. Full KJV Verse Text
-   - Include EVERY verse from the passage text verbatim — do not skip, abbreviate, or alter any verse
-   - Format each verse: <p><strong>[Book Chapter:Verse]</strong> [verse text]</p>
-   - Copy the verse text exactly as provided — word for word
+2. Three-Pass Reading Plan
+   Introduce with: "Before engaging the questions and commentary below, read through all passages using this three-pass approach. Each pass takes only a few minutes but significantly deepens engagement."
+   As a numbered list (<ol>), give these three distinct reading passes with their sub-headings and guiding questions:
+   Pass 1 — Read for Overall Flow and Story: "Read the whole passage without stopping. What is the overall movement? What is the author building toward?"
+   Pass 2 — Read for Repeated Words and Phrases: "Read again, this time with a pen or highlighter. Mark every time you see words that repeat." Name 3–5 specific words that recur in this passage. Ask: "Why does this word keep appearing? What does its repetition signal?"
+   Pass 3 — Read for Structure: "Read a final time looking for the literary shape of each passage." Name 2–3 specific structural features (commands, promises, contrasts, cause-and-effect chains). Ask: "How does each passage build its argument or tell its story?"
 
-3. Three-Pass Reading Plan
-   As a numbered list (<ol>), give these three distinct reading passes:
-   Pass 1 — Read for Overall Flow
-   Pass 2 — Read for Repeated Words and Phrases (name 3–5 specific words that recur)
-   Pass 3 — Read for Structure (name 2–3 specific structural features)
-
-4. Key Verse Anchors
+3. Key Verse Anchors
+   - Introduce with: "Pay particular attention to these verses as you read:"
    - List 3–5 specific verses from the passage that deserve extra attention
-   - For each: verse reference + 1–2 sentences explaining why it is a theological or narrative anchor
+   - For each: verse reference + 1 sentence explaining why it is a theological or narrative anchor
 
-Return as an HTML string.
+4. Optional Short Quotes
+   - Include 1–2 very short quotes (≤15 words) from the passage as teasers — not the full text
+   - Wrap each in <blockquote> tags
+
+ABSOLUTE RULE: NEVER paste the full passage text. Return as an HTML string.
 
 ---
 
@@ -212,16 +215,29 @@ Purpose: Pure observation — what the text says, not what it means.
 
 CRITICAL RULE: PURE OBSERVATION only. No theological conclusions. No interpretive claims.
 
-Categories: WHO, WHAT, REPEATED, CONTRASTS, STRUCTURE, CAUSE-EFFECT, SURPRISES
+Start the section with this exact intro paragraph (italic):
+<p><em>The following observations report only what the text says — no interpretation or theology yet. Each point cites the specific verse(s) observed.</em></p>
+
+Then provide the numbered observations as an <ol>.
+
+Categories to look for:
+- WHO: Who is speaking? Who is addressed? Who is mentioned?
+- WHAT: What actions occur? What commands are given? What promises?
+- REPEATED WORDS: What words or phrases appear more than once?
+- CONTRASTS: What opposites are set against each other?
+- STRUCTURE: What is the logical flow? Chiasm? Parallel? List?
+- CAUSE-AND-EFFECT: "Because X, therefore Y" patterns
+- SURPRISES: Anything unexpected or counter-intuitive in the text
 
 Count: 5–8 (normal) or 8–12 (deep_dive)
 
 For each observation:
+  - State what the text says (not what it means)
   - 1–2 sentences stating what the text explicitly says
   - Cite the specific verse(s)
   - Wrap verse references in <strong> tags
 
-End with a Structure Snapshot: one sentence describing the passage's overall structure.
+End with a Structure Snapshot: one sentence describing the passage's overall structure (e.g. "Paul builds an argument in three stages: suffering → perseverance → glory").
 
 Return as an HTML string with <ol> for numbered observations.
 
@@ -232,7 +248,7 @@ SELF-CHECK — VERIFY EVERY POINT BEFORE RETURNING
 1. Does section_01 contain BOTH key_facts (with all 11 required fields including book_display, key_theme, read_time) AND html_content (single big-story sentence)?
 2. Does section_02 contain "Jesus" addressed directly? (REGEX-CHECKED)
 3. Does section_03 cover Literary Context, Historical Setting, Why It Matters Today?
-4. Does section_04 include EVERY verse verbatim with the Three-Pass Reading Plan?
+4. Does section_04 have Passage Reference, Three-Pass Reading Plan, Key Verse Anchors, and Optional Short Quotes WITHOUT pasting the full passage text?
 5. Is section_05 PURE OBSERVATION only?
 6. Are exactly the keys section_01 through section_05 returned?
 
@@ -258,8 +274,8 @@ Response format — valid JSON only:
   },
   "section_02": "<p>Lord Jesus, ...</p>",
   "section_03": "<h3>Literary Context</h3><p>...</p>",
-  "section_04": "<h3>...</h3><p><strong>Verse ref</strong> Verse text</p>...",
-  "section_05": "<ol><li>...<strong>Book Chapter:Verse</strong>...</li></ol><p><strong>Structure Snapshot:</strong> ...</p>"
+  "section_04": "<h3>Passage reference</h3><p>Before we dig in...</p><p>Read the full passage at ...</p><ol><li>Pass 1...</li>...</ol><h3>Key Verse Anchors</h3>...<blockquote>Short quote...</blockquote>",
+  "section_05": "<p><em>The following observations report only what the text says — no interpretation or theology yet. Each point cites the specific verse(s) observed.</em></p><ol><li>...<strong>Book Chapter:Verse</strong>...</li></ol><p><strong>Structure Snapshot:</strong> ...</p>"
 }`;
 }
 
@@ -316,13 +332,45 @@ IF depth is "deep_dive":
 
 SECTION 06 — KEY TAKEAWAYS & INTERPRETATION
 
-Structure:
-1. Thesis Sentence — "This passage teaches that…" (specific to this passage)
-2. Key Takeaways (correct count for depth) — bold headline + 2–3 sentences + verse citation
-3. Cross-References grouped by: "Clarifies a key term" / "Echoes the same theme" / "Provides caution or balance"
-IF deep_dive: 4. Fresh Angles (1–2, at least one Christological) — "A common reading says… But looking more closely…"
+Interpret the passage and extract key takeaways. Theme: ${theme}. Depth: ${depth}.
 
-Return as HTML string with <h3>, <strong>, <p>, <ul>.
+Structure:
+
+1. THESIS SENTENCE
+Open directly with a <p> containing exactly one sentence: "This passage teaches that…"
+This sentence must be specific to this passage, not generic.
+NO <h3> heading before this paragraph — it follows the section heading immediately.
+
+2. KEY TAKEAWAYS
+${depth === "deep_dive" ? "5–7 takeaways" : "3–5 takeaways"}
+NO <h3> "Key Takeaways" heading. Each takeaway uses a numbered label in its headline.
+For each takeaway:
+- <h3> heading in this exact format: "Takeaway N: [Insight headline]" (e.g. "Takeaway 1: The Sabbath Is Grounded in Creation, Not Just Covenant")
+- 2–3 sentences in <p> tags explaining and grounding it in the text
+- At least one specific verse citation wrapped in <em>
+- If the takeaway touches disputed doctrine: present 2–3 mainstream views neutrally inside the same <p>. Label by tradition ("Reformed traditions emphasise…", "Catholic teaching holds…", "Many evangelical traditions…"). NEVER declare one view as correct unless the passage text is explicit and unambiguous.
+
+3. CROSS-REFERENCES
+${depth === "deep_dive" ? "4–6 cross-references" : "2–4 cross-references"}
+Use a single <h3>Cross-References</h3> heading, then a <ul>. Use these three exact category labels as <strong> inline labels:
+- <strong>Clarifies a key term:</strong> another passage that defines a word used here
+- <strong>Echoes the same theme:</strong> another passage making the same point
+- <strong>Provides caution or balance:</strong> a passage that qualifies or nuances
+For each item: 1 sentence explaining WHY it is relevant. No random verse-dumps.
+
+IF depth is "deep_dive", add:
+4. FRESH ANGLES
+Use a single <h3>Fresh Angles</h3> heading.
+1–2 perspectives that challenge a common shallow reading of this text.
+- Must be gently stated and text-grounded (not provocative for shock value)
+- At least one must connect to Jesus (a Christological reading) without forcing the connection
+- Exact format for each: "A common reading says… But looking more closely, the text suggests…"
+
+FORMATTING RULES FOR THIS SECTION:
+- NEVER use "---" or "<hr>" as separators
+- Use only <h3>, <strong>, <p>, <ul>, <li>, <em>, <blockquote>
+
+Return as HTML string using <h3> for takeaway headings and sub-section headings, <p> for explanations, <ul> for cross-references.
 
 ---
 
@@ -339,19 +387,43 @@ Return as HTML string.
 
 SECTION 08 — LIFE APPLICATION
 
-Structure:
-Applications (correct count for depth) — each with:
-- Bold headline
-- Verse citation from the passage
-- THINK: grace-driven theological shift (2–3 sentences)
-- DESIRE: heart-level longing (2–3 sentences)
-- DO: one concrete, specific, checkable action this week
+Write practical life applications for ${passage}. Theme: ${theme}. Depth: ${depth}.
 
-Accountability Suggestion: one concrete action this week, framed as an act of faith.
+STRUCTURE:
 
-IF deep_dive: Three-Day Mini Action Plan (Day 1, 2, 3 — distinct domains, micro-action + prayer focus + reflection prompt)
+Open with this exact intro paragraph (italic):
+<p><em>Each application flows from a specific textual insight and answers what God invites us to think, desire, and do.</em></p>
 
-Return as HTML string.
+Then add a <hr> separator, then go directly into the applications — NO "Applications" heading or any other heading before the first application.
+
+${depth === "deep_dive" ? "5–7 applications" : "3–5 applications"}
+
+For each application:
+- <h3> bold headline (1 line) — use format: "Application N: [headline]"
+- <strong>From:</strong> verse citation from the passage
+- <strong>Think:</strong> grace-driven theological shift (2–3 sentences) — root in what God has done, not moral commands
+- <strong>Desire:</strong> heart-level longing (2–3 sentences)
+- <strong>Do:</strong> one concrete, specific, checkable action this week — "This week, identify one relationship where you can practice the forgiveness described in v.12" is good. "Pray more" is NOT acceptable.
+
+Every application must:
+- Tie to a SPECIFIC insight from ${passage} (cite the verse)
+- Be GRACE-DRIVEN: "Because Christ forgave you (v.13), you can extend that same forgiveness to…" not "You should forgive more."
+
+Cover at least ${depth === "deep_dive" ? "3" : "2"} distinct life domains: relationships, work, speech, habits, service, conflict, finances, identity, community, rest, etc.
+
+2. ACCOUNTABILITY SUGGESTION
+One concrete action the user can take THIS WEEK. Make it small, specific, and measurable. Frame it as an act of faith.
+
+IF deep_dive, add:
+
+3. THREE-DAY MINI ACTION PLAN
+For each of 3 days, provide:
+- Micro-action: one small, doable thing (5–10 minutes)
+- Prayer focus: a specific prayer point addressed to Jesus
+- Reflection prompt: one question to journal or meditate on
+Cover 3 distinct life domains across the 3 days.
+
+Return as HTML string. Use <h3> for sub-headings and application headlines, <strong> for inline labels (Think:, Desire:, Do:, From:).
 
 ---
 
@@ -386,7 +458,7 @@ Return as HTML string.
 ---
 
 SELF-CHECK BEFORE RETURNING:
-1. section_06 opens with "This passage teaches that…"?
+1. section_06 opens with "This passage teaches that…"? No "---" separators? Cross-references grouped by the three exact category labels? Disputed doctrine handled fairly with tradition labels?
 2. section_07 has pull quote in <blockquote>?
 3. All section_08 applications are grace-driven with checkable DO actions?
 4. section_09 has correct question count and types?

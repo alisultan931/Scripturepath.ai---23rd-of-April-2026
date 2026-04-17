@@ -206,6 +206,42 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+/* Section 05 observation list — amber number badges */
+.study-html.obs-section ol {
+  list-style: none;
+  counter-reset: obs-counter;
+  padding-left: 0;
+}
+.study-html.obs-section ol > li {
+  counter-increment: obs-counter;
+  padding-left: 2.25rem;
+  position: relative;
+  margin-bottom: 1rem;
+}
+.study-html.obs-section ol > li::before {
+  content: counter(obs-counter);
+  position: absolute;
+  left: 0;
+  top: 0.22rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  background: rgba(214,168,95,0.12);
+  border: 1px solid rgba(214,168,95,0.25);
+  border-radius: 0.2rem;
+  color: #D6A85F;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.study-html hr {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin: 1.5rem 0;
+}
+
 .study-html blockquote {
   border-left: 3px solid #D6A85F;
   padding: 0.75rem 1rem;

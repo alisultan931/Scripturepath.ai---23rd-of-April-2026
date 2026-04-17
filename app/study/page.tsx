@@ -164,14 +164,23 @@ function HtmlSection({ html }: { html: string }) {
   );
 }
 
-function StudyContent({ study, title, passage, depth }: { study: StudyData; title: string; passage: string; depth: string }) {
+function Section05({ html }: { html: string }) {
+  return (
+    <div
+      className="study-html obs-section"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
+function StudyContent({ study, title, passage, description, depth }: { study: StudyData; title: string; passage: string; description: string; depth: string }) {
   const router = useRouter();
   const sections = [
     { label: SECTION_LABELS[0], content: <Section01 data={study.section_01} passage={passage} /> },
     { label: SECTION_LABELS[1], content: <HtmlSection html={study.section_02} /> },
     { label: SECTION_LABELS[2], content: <HtmlSection html={study.section_03} /> },
     { label: SECTION_LABELS[3], content: <HtmlSection html={study.section_04} /> },
-    { label: SECTION_LABELS[4], content: <HtmlSection html={study.section_05} /> },
+    { label: SECTION_LABELS[4], content: <Section05 html={study.section_05} /> },
     { label: SECTION_LABELS[5], content: <HtmlSection html={study.section_06} /> },
     { label: SECTION_LABELS[6], content: <HtmlSection html={study.section_07} /> },
     { label: SECTION_LABELS[7], content: <HtmlSection html={study.section_08} /> },
@@ -202,9 +211,25 @@ function StudyContent({ study, title, passage, depth }: { study: StudyData; titl
               {depth === "deep_dive" ? "Deep Dive" : "Normal"}
             </span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-semibold text-white leading-tight tracking-tight">
+          <h1 className="text-3xl md:text-4xl font-semibold text-white leading-tight tracking-tight mb-3">
             {title}
           </h1>
+          {passage && (
+            <div className="flex items-center gap-2 mb-3">
+              <span
+                className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md border"
+                style={{ color: "#D6A85F", background: "rgba(214,168,95,0.08)", borderColor: "rgba(214,168,95,0.25)" }}
+              >
+                <BookOpen size={12} />
+                {passage}
+              </span>
+            </div>
+          )}
+          {description && (
+            <p className="text-sm text-white/50 italic leading-relaxed max-w-2xl">
+              {description}
+            </p>
+          )}
         </div>
 
         <div className="space-y-12">
@@ -276,7 +301,7 @@ function StudyPageInner() {
 
   if (!study) return <AiLoader />;
 
-  return <StudyContent study={study} title={title} passage={passage} depth={depth} />;
+  return <StudyContent study={study} title={title} passage={passage} description={description} depth={depth} />;
 }
 
 export default function StudyPage() {
