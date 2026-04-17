@@ -5,7 +5,21 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type");
+  const code = searchParams.get("code");
+  const next = searchParams.get("next");
 
+  // PKCE code exchange (used by password recovery and OAuth)
+  if (code) {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (!error) {
+      const redirectTo = next ?? (data.user ? "/auth/reset-password" : "/chat");
+      return NextResponse.redirect(`${origin}${redirectTo}`);
+    }
+  }
+
+  // OTP token hash (used by email confirmation)
   if (token_hash && type === "email") {
     const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({ type: "email", token_hash });
@@ -15,6 +29,7 @@ export async function GET(request: Request) {
     }
   }
 
+  // OTP token hash fallback for recovery
   if (token_hash && type === "recovery") {
     const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({ type: "recovery", token_hash });
