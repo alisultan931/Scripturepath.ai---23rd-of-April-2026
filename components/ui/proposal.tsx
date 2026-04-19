@@ -28,6 +28,7 @@ export interface Proposal {
 interface ProposalPageProps {
   proposal: Proposal;
   isPro?: boolean;
+  credits?: number;
   onRetry: () => void;
   onStartFromScratch: () => void;
   onGenerate: (depth: "normal" | "deep_dive") => void;
@@ -48,7 +49,7 @@ const DEEP_DIVE_ONLY = [
   { icon: "⊟", text: "3-day mini action plan with daily prayer focus" },
 ];
 
-export default function ProposalPage({ proposal, isPro = false, onRetry, onStartFromScratch, onGenerate }: ProposalPageProps) {
+export default function ProposalPage({ proposal, isPro = false, credits = 1, onRetry, onStartFromScratch, onGenerate }: ProposalPageProps) {
   const [deepDive, setDeepDive] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -448,10 +449,10 @@ export default function ProposalPage({ proposal, isPro = false, onRetry, onStart
               }
             `}</style>
 
-            <div className="group relative inline-flex w-full transition-all hover:scale-[1.02] active:scale-95">
+            <div className={`group relative inline-flex w-full transition-all ${credits > 0 ? "hover:scale-[1.02] active:scale-95" : "opacity-50 cursor-not-allowed"}`}>
               <div
                 className="relative inline-flex w-full overflow-hidden"
-                style={{ padding: "1px", boxShadow: "0 0 28px rgba(214,168,95,0.1)" }}
+                style={{ padding: "1px", boxShadow: credits > 0 ? "0 0 28px rgba(214,168,95,0.1)" : "none" }}
               >
                 <div
                   aria-hidden="true"
@@ -461,7 +462,7 @@ export default function ProposalPage({ proposal, isPro = false, onRetry, onStart
                     width: "300%",
                     height: "300%",
                     background: "conic-gradient(from 0deg, transparent 70%, rgba(214,168,95,0.9) 78%, transparent 86%)",
-                    animation: "border-spin 4s linear infinite",
+                    animation: credits > 0 ? "border-spin 4s linear infinite" : "none",
                   }}
                 />
                 <div
@@ -472,13 +473,14 @@ export default function ProposalPage({ proposal, isPro = false, onRetry, onStart
                     width: "300%",
                     height: "300%",
                     background: "conic-gradient(from 0deg, transparent 70%, rgba(214,168,95,0.35) 78%, transparent 86%)",
-                    animation: "border-spin 4s linear infinite",
+                    animation: credits > 0 ? "border-spin 4s linear infinite" : "none",
                     filter: "blur(12px)",
                   }}
                 />
                 <button
-                  onClick={() => onGenerate(deepDive ? "deep_dive" : "normal")}
-                  className="relative inline-flex items-center justify-center gap-2 w-full px-8 py-3 bg-black text-white overflow-hidden transition-all hover:bg-neutral-900"
+                  disabled={credits <= 0}
+                  onClick={() => credits > 0 && onGenerate(deepDive ? "deep_dive" : "normal")}
+                  className="relative inline-flex items-center justify-center gap-2 w-full px-8 py-3 bg-black text-white overflow-hidden transition-all hover:bg-neutral-900 disabled:pointer-events-none"
                   style={{ fontWeight: 500, letterSpacing: "0.08em", fontSize: "0.85rem" }}
                 >
                   <span className="relative z-10">{deepDive ? "Generate Deep Dive" : "Generate Study"}</span>
@@ -487,6 +489,16 @@ export default function ProposalPage({ proposal, isPro = false, onRetry, onStart
                 </button>
               </div>
             </div>
+
+            {credits <= 0 && (
+              <p className="text-center text-xs mt-2" style={{ color: "rgba(255,100,100,0.75)" }}>
+                You have no credits remaining.{" "}
+                <a href="/#pricing" style={{ color: "rgba(196,147,78,0.9)", textDecoration: "underline" }}>
+                  Upgrade to Premium
+                </a>{" "}
+                or purchase more credits to generate a study.
+              </p>
+            )}
           </div>
 
         </div>

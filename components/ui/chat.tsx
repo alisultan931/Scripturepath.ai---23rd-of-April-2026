@@ -195,6 +195,7 @@ export default function ScripturePathChat() {
   const [inputError, setInputError] = useState(false);
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [isPro, setIsPro] = useState(false);
+  const [credits, setCredits] = useState<number>(1);
   const [audience, setAudience] = useState(AUDIENCE_OPTIONS[0]);
   const [tone, setTone] = useState(TONE_OPTIONS[0]);
   const [translation, setTranslation] = useState(TRANSLATION_OPTIONS[0].value);
@@ -205,11 +206,14 @@ export default function ScripturePathChat() {
       if (!user) return;
       const { data } = await supabase
         .from("profiles")
-        .select("subscription_status")
+        .select("subscription_status, credits")
         .eq("id", user.id)
         .single();
       if (data?.subscription_status === "active" || data?.subscription_status === "canceling") {
         setIsPro(true);
+      }
+      if (typeof data?.credits === "number") {
+        setCredits(data.credits);
       }
     });
   }, []);
@@ -282,6 +286,7 @@ export default function ScripturePathChat() {
       <ProposalPage
         proposal={proposal}
         isPro={isPro}
+        credits={credits}
         onRetry={handleRetry}
         onStartFromScratch={() => setProposal(null)}
         onGenerate={handleGenerateStudy}
