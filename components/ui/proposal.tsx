@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight, BookOpen, RefreshCw, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, Crown, RefreshCw, RotateCcw, Sparkles } from "lucide-react";
 import { Navigation } from "@/components/ui/particle-effect-for-hero";
 
 const STAR_DENSITY = 0.00012;
@@ -50,6 +50,7 @@ const DEEP_DIVE_ONLY = [
 
 export default function ProposalPage({ proposal, isPro = false, onRetry, onStartFromScratch, onGenerate }: ProposalPageProps) {
   const [deepDive, setDeepDive] = useState(false);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const starsRef = useRef<Star[]>([]);
@@ -287,7 +288,7 @@ export default function ProposalPage({ proposal, isPro = false, onRetry, onStart
           {/* ── Mode buttons ── */}
           <div className="flex gap-3 mb-4">
             <button
-              onClick={() => setDeepDive(false)}
+              onClick={() => { setDeepDive(false); setShowUpgradePrompt(false); }}
               className="flex-1 flex items-center justify-center gap-2 py-3 text-sm transition-all hover:opacity-90"
               style={{
                 border: deepDive ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(255,255,255,0.35)",
@@ -300,7 +301,7 @@ export default function ProposalPage({ proposal, isPro = false, onRetry, onStart
               Normal
             </button>
             <button
-              onClick={() => isPro ? setDeepDive(true) : window.location.href = "/#pricing"}
+              onClick={() => { if (isPro) { setDeepDive(true); setShowUpgradePrompt(false); } else { setShowUpgradePrompt(true); } }}
               className="flex-1 flex items-center justify-center gap-2 py-3 text-sm transition-all deep-dive-btn"
               style={{
                 border: deepDive ? "1px solid rgba(214,168,95,0.6)" : "1px solid rgba(255,255,255,0.12)",
@@ -326,6 +327,32 @@ export default function ProposalPage({ proposal, isPro = false, onRetry, onStart
                 PRO
               </span>
             </button>
+          </div>
+
+          {/* ── Upgrade prompt (free users) ── */}
+          <div
+            className="overflow-hidden transition-all duration-400 ease-in-out"
+            style={{ maxHeight: showUpgradePrompt ? "200px" : "0px", opacity: showUpgradePrompt ? 1 : 0, marginBottom: showUpgradePrompt ? "16px" : "0px" }}
+          >
+            <div style={{ border: "1px solid rgba(196,147,78,0.35)", background: "rgba(196,147,78,0.06)", padding: "16px 20px", marginTop: "4px" }}>
+              <div className="flex items-start gap-3">
+                <Crown className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "rgba(196,147,78,0.85)" }} />
+                <div>
+                  <p style={{ fontSize: "0.82rem", fontWeight: 600, color: "rgba(196,147,78,0.95)", marginBottom: "4px" }}>
+                    Premium Feature
+                  </p>
+                  <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.55, marginBottom: "12px" }}>
+                    Deep Dive unlocks scholarly framing, expanded observations, a 3-day action plan, and much more — available exclusively on Premium.
+                  </p>
+                  <a
+                    href="/#pricing"
+                    style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "0.78rem", fontWeight: 600, color: "rgba(196,147,78,0.95)", letterSpacing: "0.06em", textDecoration: "none" }}
+                  >
+                    Upgrade to Premium <ArrowRight className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* ── Deep Dive info panel ── */}
