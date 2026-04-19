@@ -65,6 +65,7 @@ function DashboardInner() {
   const [canceling, setCanceling] = useState(false);
   const [cancelDone, setCancelDone] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
@@ -87,7 +88,6 @@ function DashboardInner() {
   }, [router]);
 
   const handleCancel = async () => {
-    if (!confirm("Cancel your subscription? You'll keep access until the end of your billing period.")) return;
     setCanceling(true);
     setCancelError(null);
     try {
@@ -95,6 +95,7 @@ function DashboardInner() {
       if (res.ok) {
         setProfile((p) => p ? { ...p, subscription_status: "canceling" } : p);
         setCancelDone(true);
+        setConfirmingCancel(false);
       } else {
         const body = await res.json().catch(() => ({}));
         setCancelError(body.error ?? `Request failed (${res.status})`);
@@ -261,16 +262,39 @@ function DashboardInner() {
                   )}
 
                   {profile?.subscription_status === "active" && !cancelDone && (
-                    <button
-                      onClick={handleCancel}
-                      disabled={canceling}
-                      className="mt-6 text-sm transition-colors disabled:opacity-50"
-                      style={{ color: M }}
-                      onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "rgba(248,113,113,0.9)")}
-                      onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = M)}
-                    >
-                      {canceling ? "Canceling…" : "Cancel subscription"}
-                    </button>
+                    <div className="mt-6">
+                      {!confirmingCancel ? (
+                        <button
+                          onClick={() => setConfirmingCancel(true)}
+                          className="text-sm transition-colors"
+                          style={{ color: M }}
+                          onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "rgba(248,113,113,0.9)")}
+                          onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = M)}
+                        >
+                          Cancel subscription
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <p className="text-sm" style={{ color: B }}>Cancel your subscription?</p>
+                          <button
+                            onClick={handleCancel}
+                            disabled={canceling}
+                            className="text-sm font-medium transition-colors disabled:opacity-50"
+                            style={{ color: "rgba(248,113,113,0.9)" }}
+                          >
+                            {canceling ? "Canceling…" : "Yes, cancel"}
+                          </button>
+                          <button
+                            onClick={() => setConfirmingCancel(false)}
+                            disabled={canceling}
+                            className="text-sm transition-colors disabled:opacity-50"
+                            style={{ color: M }}
+                          >
+                            Keep plan
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
 
                   {profile?.subscription_status === "canceling" && (
