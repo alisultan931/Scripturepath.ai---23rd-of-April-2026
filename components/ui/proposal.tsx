@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, BookOpen, Crown, RefreshCw, RotateCcw, Sparkles } from "lucide-react";
 import { Navigation } from "@/components/ui/particle-effect-for-hero";
+import UpgradeModal from "@/components/ui/upgrade-modal";
 
 const STAR_DENSITY = 0.00012;
 const MOUSE_RADIUS = 160;
@@ -52,6 +53,7 @@ const DEEP_DIVE_ONLY = [
 export default function ProposalPage({ proposal, isPro = false, credits = 1, onRetry, onStartFromScratch, onGenerate }: ProposalPageProps) {
   const [deepDive, setDeepDive] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const starsRef = useRef<Star[]>([]);
@@ -155,6 +157,7 @@ export default function ProposalPage({ proposal, isPro = false, credits = 1, onR
   const handleMouseLeave = () => { mouseRef.current.active = false; };
 
   return (
+    <>
     <div
       ref={wrapperRef}
       className="relative w-full min-h-screen bg-zinc-950 overflow-x-hidden flex flex-col"
@@ -345,12 +348,12 @@ export default function ProposalPage({ proposal, isPro = false, credits = 1, onR
                   <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.55, marginBottom: "12px" }}>
                     Deep Dive unlocks scholarly framing, expanded observations, a 3-day action plan, and much more — available exclusively on Premium.
                   </p>
-                  <a
-                    href="/#pricing"
-                    style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "0.78rem", fontWeight: 600, color: "rgba(196,147,78,0.95)", letterSpacing: "0.06em", textDecoration: "none" }}
+                  <button
+                    onClick={() => setShowUpgradeModal(true)}
+                    style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "0.78rem", fontWeight: 600, color: "rgba(196,147,78,0.95)", letterSpacing: "0.06em", background: "none", border: "none", padding: 0, cursor: "pointer" }}
                   >
                     Upgrade to Premium <ArrowRight className="w-3 h-3" />
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
@@ -493,9 +496,9 @@ export default function ProposalPage({ proposal, isPro = false, credits = 1, onR
             {credits <= 0 && (
               <p className="text-center text-xs mt-2" style={{ color: "rgba(255,100,100,0.75)" }}>
                 You have no credits remaining.{" "}
-                <a href="/#pricing" style={{ color: "rgba(196,147,78,0.9)", textDecoration: "underline" }}>
+                <button onClick={() => setShowUpgradeModal(true)} style={{ color: "rgba(196,147,78,0.9)", textDecoration: "underline", background: "none", border: "none", padding: 0, cursor: "pointer", font: "inherit" }}>
                   Upgrade to Premium
-                </a>{" "}
+                </button>{" "}
                 or purchase more credits to generate a study.
               </p>
             )}
@@ -504,5 +507,8 @@ export default function ProposalPage({ proposal, isPro = false, credits = 1, onR
         </div>
       </div>
     </div>
+
+    <UpgradeModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+    </>
   );
 }
