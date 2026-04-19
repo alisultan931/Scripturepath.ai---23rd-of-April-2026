@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ChevronDown, BookOpen, LogOut, LayoutDashboard, Zap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import UpgradeModal from '@/components/ui/upgrade-modal';
 
 // --- Types ---
 
@@ -379,6 +380,7 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
     const [authLoading, setAuthLoading] = useState(true);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [isPremium, setIsPremium] = useState(false);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const supabaseRef = useRef(createClient());
 
@@ -432,6 +434,7 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
     };
 
     return (
+        <>
         <nav className="absolute top-6 left-0 right-0 z-20 flex justify-center px-6">
             <div className="flex items-center bg-[#111111] border border-white/10 rounded-full px-2 py-1.5 backdrop-blur-md shadow-[0_4px_32px_rgba(0,0,0,0.4)]">
                 {/* Logo */}
@@ -463,8 +466,8 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
                 ) : firstName ? (
                     <div className="flex items-center gap-2 ml-1">
                         {!isPremium && (
-                            <Link
-                                href="/#pricing"
+                            <button
+                                onClick={() => setShowUpgradeModal(true)}
                                 className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
                                 style={{
                                     background: 'linear-gradient(135deg, #D6A85F 0%, #a87c3a 100%)',
@@ -474,7 +477,7 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
                             >
                                 <Zap className="w-3.5 h-3.5" />
                                 Upgrade to Premium
-                            </Link>
+                            </button>
                         )}
                         <div ref={dropdownRef} className="relative">
                             <button
@@ -512,6 +515,8 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
                 )}
             </div>
         </nav>
+        <UpgradeModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+        </>
     )
 }
 

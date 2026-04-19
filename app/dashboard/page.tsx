@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { BookOpen, Zap, Crown, Calendar, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react";
+import UpgradeModal from "@/components/ui/upgrade-modal";
 
 // ── Design tokens (matching study page) ───────────────────────────────────────
 const H   = "rgba(255,255,255,0.92)";
@@ -63,6 +64,7 @@ function DashboardInner() {
   const [loading, setLoading] = useState(true);
   const [canceling, setCanceling] = useState(false);
   const [cancelDone, setCancelDone] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -105,6 +107,7 @@ function DashboardInner() {
     : null;
 
   return (
+    <>
     <div className="min-h-screen" style={{ background: PBG }}>
       {/* Minimal navbar */}
       <nav className="border-b" style={{ borderColor: DIV }}>
@@ -263,8 +266,8 @@ function DashboardInner() {
                     You're on the free plan. Upgrade to Premium for 30 credits per month and Deep Dive access.
                   </p>
                   <div className="flex flex-wrap gap-3">
-                    <Link
-                      href="/#pricing"
+                    <button
+                      onClick={() => setShowUpgradeModal(true)}
                       className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
                       style={{
                         background: "linear-gradient(135deg, #D6A85F 0%, #a87c3a 100%)",
@@ -274,7 +277,7 @@ function DashboardInner() {
                     >
                       <Zap className="w-3.5 h-3.5" />
                       Upgrade to Premium
-                    </Link>
+                    </button>
                     <Link
                       href="/chat"
                       className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-sm font-medium transition-colors"
@@ -292,6 +295,9 @@ function DashboardInner() {
         )}
       </div>
     </div>
+
+    <UpgradeModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+    </>
   );
 }
 
