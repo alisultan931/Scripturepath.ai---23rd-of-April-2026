@@ -64,6 +64,7 @@ function DashboardInner() {
   const [loading, setLoading] = useState(true);
   const [canceling, setCanceling] = useState(false);
   const [cancelDone, setCancelDone] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
@@ -88,10 +89,18 @@ function DashboardInner() {
   const handleCancel = async () => {
     if (!confirm("Cancel your subscription? You'll keep access until the end of your billing period.")) return;
     setCanceling(true);
-    const res = await fetch("/api/stripe/cancel-subscription", { method: "POST" });
-    if (res.ok) {
-      setProfile((p) => p ? { ...p, subscription_status: "canceling" } : p);
-      setCancelDone(true);
+    setCancelError(null);
+    try {
+      const res = await fetch("/api/stripe/cancel-subscription", { method: "POST" });
+      if (res.ok) {
+        setProfile((p) => p ? { ...p, subscription_status: "canceling" } : p);
+        setCancelDone(true);
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setCancelError(body.error ?? `Request failed (${res.status})`);
+      }
+    } catch {
+      setCancelError("Network error — please try again.");
     }
     setCanceling(false);
   };
@@ -149,6 +158,16 @@ function DashboardInner() {
             <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: "#7EB89A" }} />
             <p className="text-sm font-medium" style={{ color: "#7EB89A" }}>
               Welcome to Premium! Your 30 credits have been added and your subscription is now active.
+            </p>
+          </div>
+        )}
+
+        {cancelError && (
+          <div className="flex items-center gap-3 rounded-xl px-5 py-4 mb-8"
+            style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.25)" }}>
+            <AlertCircle className="w-4 h-4 shrink-0" style={{ color: "rgba(248,113,113,0.9)" }} />
+            <p className="text-sm" style={{ color: "rgba(248,113,113,0.9)" }}>
+              {cancelError}
             </p>
           </div>
         )}
