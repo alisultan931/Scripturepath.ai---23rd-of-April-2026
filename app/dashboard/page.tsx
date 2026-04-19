@@ -5,8 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { BookOpen, Zap, Crown, Calendar, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react";
+import { BookOpen, Zap, Crown, Calendar, AlertCircle, CheckCircle2, ArrowRight, RefreshCw } from "lucide-react";
 import UpgradeModal from "@/components/ui/upgrade-modal";
+import CancelModal from "@/components/ui/cancel-modal";
 
 // ── Design tokens (matching study page) ───────────────────────────────────────
 const H   = "rgba(255,255,255,0.92)";
@@ -65,7 +66,9 @@ function DashboardInner() {
   const [canceling, setCanceling] = useState(false);
   const [cancelDone, setCancelDone] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
-  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [renewing, setRenewing] = useState(false);
+  const [renewError, setRenewError] = useState<string | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
@@ -95,7 +98,7 @@ function DashboardInner() {
       if (res.ok) {
         setProfile((p) => p ? { ...p, subscription_status: "canceling" } : p);
         setCancelDone(true);
-        setConfirmingCancel(false);
+        setShowCancelModal(false);
       } else {
         const body = await res.json().catch(() => ({}));
         setCancelError(body.error ?? `Request failed (${res.status})`);
@@ -104,6 +107,24 @@ function DashboardInner() {
       setCancelError("Network error — please try again.");
     }
     setCanceling(false);
+  };
+
+  const handleRenew = async () => {
+    setRenewing(true);
+    setRenewError(null);
+    try {
+      const res = await fetch("/api/stripe/renew-subscription", { method: "POST" });
+      if (res.ok) {
+        setProfile((p) => p ? { ...p, subscription_status: "active" } : p);
+        setCancelDone(false);
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setRenewError(body.error ?? `Request failed (${res.status})`);
+      }
+    } catch {
+      setRenewError("Network error — please try again.");
+    }
+    setRenewing(false);
   };
 
   const isPremium =
@@ -163,23 +184,21 @@ function DashboardInner() {
           </div>
         )}
 
-        {cancelError && (
-          <div className="flex items-center gap-3 rounded-xl px-5 py-4 mb-8"
-            style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.25)" }}>
-            <AlertCircle className="w-4 h-4 shrink-0" style={{ color: "rgba(248,113,113,0.9)" }} />
-            <p className="text-sm" style={{ color: "rgba(248,113,113,0.9)" }}>
-              {cancelError}
-            </p>
-          </div>
-        )}
-
         {cancelDone && (
           <div className="flex items-center gap-3 rounded-xl px-5 py-4 mb-8"
             style={{ background: "rgba(232,168,62,0.08)", border: "1px solid rgba(232,168,62,0.2)" }}>
             <AlertCircle className="w-4 h-4 shrink-0" style={{ color: "#E8A83E" }} />
             <p className="text-sm" style={{ color: "#E8A83E" }}>
-              Your subscription has been set to cancel at the end of your billing period. You still have full access until then.
+              Your subscription has been set to cancel at the end of your billing period.{periodEnd ? ` You still have full access until ${periodEnd}.` : " You still have full access until then."}
             </p>
+          </div>
+        )}
+
+        {renewError && (
+          <div className="flex items-center gap-3 rounded-xl px-5 py-4 mb-8"
+            style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.25)" }}>
+            <AlertCircle className="w-4 h-4 shrink-0" style={{ color: "rgba(248,113,113,0.9)" }} />
+            <p className="text-sm" style={{ color: "rgba(248,113,113,0.9)" }}>{renewError}</p>
           </div>
         )}
 
@@ -244,63 +263,58 @@ function DashboardInner() {
 
               {isPremium ? (
                 <div>
-                  <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center gap-3 mb-4">
                     <Crown className="w-4 h-4" style={{ color: G }} />
                     <span className="font-semibold text-sm" style={{ color: H }}>Premium Plan</span>
                     <StatusBadge status={profile?.subscription_status ?? null} />
                   </div>
 
-                  {periodEnd && (
-                    <div className="flex items-center gap-2 mt-4" style={{ color: M }}>
-                      <Calendar className="w-3.5 h-3.5" />
-                      <p className="text-sm">
-                        {profile?.subscription_status === "canceling"
-                          ? `Access ends on ${periodEnd}`
-                          : `Renews on ${periodEnd}`}
-                      </p>
-                    </div>
-                  )}
+                  <div className="space-y-2">
+                    {periodEnd && profile?.subscription_status === "active" && (
+                      <div className="flex items-center gap-2" style={{ color: M }}>
+                        <Calendar className="w-3.5 h-3.5 shrink-0" />
+                        <p className="text-sm">Next invoice on <span style={{ color: B }}>{periodEnd}</span></p>
+                      </div>
+                    )}
+                    {periodEnd && profile?.subscription_status === "canceling" && (
+                      <div className="flex items-center gap-2" style={{ color: M }}>
+                        <Calendar className="w-3.5 h-3.5 shrink-0" />
+                        <p className="text-sm">Access ends on <span style={{ color: "#E8A83E" }}>{periodEnd}</span></p>
+                      </div>
+                    )}
+                  </div>
 
-                  {profile?.subscription_status === "active" && !cancelDone && (
-                    <div className="mt-6">
-                      {!confirmingCancel ? (
-                        <button
-                          onClick={() => setConfirmingCancel(true)}
-                          className="text-sm transition-colors"
-                          style={{ color: M }}
-                          onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "rgba(248,113,113,0.9)")}
-                          onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = M)}
-                        >
-                          Cancel subscription
-                        </button>
-                      ) : (
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <p className="text-sm" style={{ color: B }}>Cancel your subscription?</p>
-                          <button
-                            onClick={handleCancel}
-                            disabled={canceling}
-                            className="text-sm font-medium transition-colors disabled:opacity-50"
-                            style={{ color: "rgba(248,113,113,0.9)" }}
-                          >
-                            {canceling ? "Canceling…" : "Yes, cancel"}
-                          </button>
-                          <button
-                            onClick={() => setConfirmingCancel(false)}
-                            disabled={canceling}
-                            className="text-sm transition-colors disabled:opacity-50"
-                            style={{ color: M }}
-                          >
-                            Keep plan
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                  {profile?.subscription_status === "active" && (
+                    <button
+                      onClick={() => { setCancelError(null); setShowCancelModal(true); }}
+                      className="mt-6 text-sm transition-colors"
+                      style={{ color: M }}
+                      onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "rgba(248,113,113,0.9)")}
+                      onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = M)}
+                    >
+                      Cancel subscription
+                    </button>
                   )}
 
                   {profile?.subscription_status === "canceling" && (
-                    <p className="mt-4 text-xs" style={{ color: M }}>
-                      Your subscription is set to cancel. No further charges will be made.
-                    </p>
+                    <div className="mt-6">
+                      <p className="text-xs mb-4" style={{ color: M }}>
+                        No further charges will be made. Changed your mind?
+                      </p>
+                      <button
+                        onClick={handleRenew}
+                        disabled={renewing}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:opacity-90 active:scale-95 disabled:opacity-50"
+                        style={{
+                          background: "linear-gradient(135deg, #D6A85F 0%, #a87c3a 100%)",
+                          color: "#000",
+                          boxShadow: "0 0 12px rgba(214,168,95,0.35)",
+                        }}
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${renewing ? "animate-spin" : ""}`} />
+                        {renewing ? "Renewing…" : "Renew subscription"}
+                      </button>
+                    </div>
                   )}
                 </div>
               ) : (
@@ -340,6 +354,14 @@ function DashboardInner() {
     </div>
 
     <UpgradeModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+    <CancelModal
+      open={showCancelModal}
+      onClose={() => setShowCancelModal(false)}
+      onConfirm={handleCancel}
+      canceling={canceling}
+      periodEnd={periodEnd}
+      error={cancelError}
+    />
     </>
   );
 }
