@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 function getPeriodEnd(sub: Stripe.Subscription): string | null {
-  const ts = (sub as unknown as Record<string, unknown>).current_period_end;
+  const ts = sub.items?.data?.[0]?.current_period_end;
   if (typeof ts === "number") return new Date(ts * 1000).toISOString();
   return null;
 }

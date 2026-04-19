@@ -26,7 +26,7 @@ export async function POST() {
     cancel_at_period_end: true,
   });
 
-  const rawPeriodEnd = (subscription as unknown as Record<string, unknown>).current_period_end;
+  const rawPeriodEnd = subscription.items?.data?.[0]?.current_period_end;
   const current_period_end = typeof rawPeriodEnd === "number"
     ? new Date(rawPeriodEnd * 1000).toISOString()
     : null;
