@@ -22,14 +22,19 @@ export async function POST() {
     return Response.json({ error: "No active subscription" }, { status: 400 });
   }
 
-  await stripe.subscriptions.update(profile.stripe_subscription_id, {
+  const subscription = await stripe.subscriptions.update(profile.stripe_subscription_id, {
     cancel_at_period_end: true,
   });
 
+  const rawPeriodEnd = (subscription as unknown as Record<string, unknown>).current_period_end;
+  const current_period_end = typeof rawPeriodEnd === "number"
+    ? new Date(rawPeriodEnd * 1000).toISOString()
+    : null;
+
   await admin
     .from("profiles")
-    .update({ subscription_status: "canceling" })
+    .update({ subscription_status: "canceling", ...(current_period_end ? { current_period_end } : {}) })
     .eq("id", user.id);
 
-  return Response.json({ success: true });
+  return Response.json({ success: true, current_period_end });
 }

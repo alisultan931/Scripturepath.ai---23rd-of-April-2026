@@ -96,7 +96,12 @@ function DashboardInner() {
     try {
       const res = await fetch("/api/stripe/cancel-subscription", { method: "POST" });
       if (res.ok) {
-        setProfile((p) => p ? { ...p, subscription_status: "canceling" } : p);
+        const body = await res.json().catch(() => ({}));
+        setProfile((p) => p ? {
+          ...p,
+          subscription_status: "canceling",
+          ...(body.current_period_end ? { current_period_end: body.current_period_end } : {}),
+        } : p);
         setCancelDone(true);
         setShowCancelModal(false);
       } else {
