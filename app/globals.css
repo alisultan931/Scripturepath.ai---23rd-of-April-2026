@@ -169,44 +169,70 @@
   }
 }
 
-/* Study page HTML content typography */
+/* ─────────────────────────────────────────────────────────────────────────────
+   STUDY PAGE — unified typography system
+   Heading color: rgba(255,255,255,0.92) — applies to ALL h3 across every section
+   Body color:    rgba(255,255,255,0.62)
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Generic prose sections (03, 06, 07, 08) */
 .study-html h3 {
-  font-size: 1.05rem;
+  font-size: 0.9375rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.9);
-  margin-top: 1.5rem;
-  margin-bottom: 0.5rem;
+  color: rgba(255,255,255,0.92);
+  margin-top: 2rem;
+  margin-bottom: 0.6rem;
   letter-spacing: -0.01em;
 }
 .study-html p {
-  font-size: 0.925rem;
-  color: rgba(255,255,255,0.7);
-  line-height: 1.75;
-  margin-bottom: 0.75rem;
+  font-size: 0.9375rem;
+  color: rgba(255,255,255,0.62);
+  line-height: 1.85;
+  margin-bottom: 1rem;
 }
-.study-html ul, .study-html ol {
-  padding-left: 1.25rem;
-  margin-bottom: 0.75rem;
+.study-html ul,
+.study-html ol {
+  padding-left: 1.35rem;
+  margin-bottom: 1rem;
 }
 .study-html li {
-  font-size: 0.925rem;
-  color: rgba(255,255,255,0.7);
-  line-height: 1.75;
-  margin-bottom: 0.4rem;
+  font-size: 0.9375rem;
+  color: rgba(255,255,255,0.62);
+  line-height: 1.85;
+  margin-bottom: 0.5rem;
 }
 .study-html strong {
-  color: rgba(255,255,255,0.9);
+  color: rgba(255,255,255,0.88);
   font-weight: 600;
 }
 .study-html em {
-  color: #D6A85F;
+  color: #C4934E;
   font-style: normal;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.6875rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.07em;
 }
-/* Section 05 observation list — amber number badges */
+.study-html hr {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  margin: 1.75rem 0;
+}
+.study-html blockquote {
+  border-left: 2px solid rgba(196,147,78,0.4);
+  padding: 0.6rem 1.1rem;
+  margin: 1.25rem 0;
+  font-size: 0.9375rem;
+  color: rgba(255,255,255,0.78);
+  font-style: italic;
+  line-height: 1.85;
+}
+.study-html a {
+  color: #C4934E;
+  text-underline-offset: 3px;
+}
+
+/* Observations (section 05) — amber numbered badges */
 .study-html.obs-section ol {
   list-style: none;
   counter-reset: obs-counter;
@@ -214,42 +240,230 @@
 }
 .study-html.obs-section ol > li {
   counter-increment: obs-counter;
-  padding-left: 2.25rem;
+  padding-left: 3rem;
   position: relative;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 .study-html.obs-section ol > li::before {
   content: counter(obs-counter);
   position: absolute;
   left: 0;
-  top: 0.22rem;
-  width: 1.35rem;
-  height: 1.35rem;
-  background: rgba(214,168,95,0.12);
-  border: 1px solid rgba(214,168,95,0.25);
-  border-radius: 0.2rem;
-  color: #D6A85F;
-  font-size: 0.65rem;
+  top: 0.2rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  background: rgba(196,147,78,0.08);
+  border: 1px solid rgba(196,147,78,0.2);
+  border-radius: 50%;
+  color: #C4934E;
+  font-size: 0.625rem;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.study-html hr {
-  border: none;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  margin: 1.5rem 0;
+/* Prayer sections (02, 10) — centered, italic */
+.prayer-html {
+  color: rgba(255,255,255,0.68);
+}
+.prayer-html p {
+  font-size: 0.9375rem;
+  color: rgba(255,255,255,0.68);
+  line-height: 2.05;
+  margin-bottom: 0.9rem;
+  text-align: center;
+  font-style: italic;
+}
+.prayer-html strong {
+  color: rgba(255,255,255,0.88);
+  font-weight: 600;
+  font-style: normal;
+}
+.prayer-html h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.92);
+  text-align: center;
+  margin-top: 1.75rem;
+  margin-bottom: 0.6rem;
+  font-style: normal;
+  letter-spacing: -0.01em;
+}
+.prayer-html ul, .prayer-html ol {
+  margin-bottom: 1.25rem;
+  padding-left: 1.25rem;
+}
+.prayer-html li {
+  font-size: 0.9375rem;
+  color: rgba(255,255,255,0.68);
+  line-height: 1.85;
+  margin-bottom: 0.45rem;
 }
 
-.study-html blockquote {
-  border-left: 3px solid #D6A85F;
-  padding: 0.75rem 1rem;
-  margin: 1rem 0;
-  background: rgba(214,168,95,0.06);
-  border-radius: 0 0.5rem 0.5rem 0;
-  font-size: 0.975rem;
-  color: rgba(255,255,255,0.85);
+/* Passage section (04) — reading guide */
+.passage-html {
+  color: rgba(255,255,255,0.62);
+}
+.passage-html h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.92);
+  margin-top: 2rem;
+  margin-bottom: 0.6rem;
+  letter-spacing: -0.01em;
+}
+.passage-html p {
+  font-size: 0.9375rem;
+  color: rgba(255,255,255,0.62);
+  line-height: 1.85;
+  margin-bottom: 1rem;
+}
+.passage-html strong {
+  color: rgba(255,255,255,0.88);
+  font-weight: 600;
+}
+.passage-html a {
+  color: #C4934E;
+  text-underline-offset: 3px;
+}
+.passage-html ol {
+  list-style: none;
+  counter-reset: pass-counter;
+  padding-left: 0;
+  margin-bottom: 1rem;
+}
+.passage-html ol > li {
+  counter-increment: pass-counter;
+  padding-left: 3rem;
+  position: relative;
+  margin-bottom: 1.5rem;
+  font-size: 0.9375rem;
+  color: rgba(255,255,255,0.62);
+  line-height: 1.85;
+}
+.passage-html ol > li::before {
+  content: counter(pass-counter);
+  position: absolute;
+  left: 0;
+  top: 0.2rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  background: rgba(196,147,78,0.08);
+  border: 1px solid rgba(196,147,78,0.2);
+  border-radius: 50%;
+  color: #C4934E;
+  font-size: 0.625rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.passage-html ul {
+  padding-left: 1.35rem;
+  margin-bottom: 1rem;
+}
+.passage-html li {
+  font-size: 0.9375rem;
+  color: rgba(255,255,255,0.62);
+  line-height: 1.85;
+  margin-bottom: 0.5rem;
+}
+.passage-html blockquote {
+  color: rgba(255,255,255,0.82);
   font-style: italic;
-  line-height: 1.7;
+  border-left: 2px solid #C4934E;
+  padding-left: 1rem;
+  margin: 1rem 0;
+}
+
+/* Discussion questions (09) */
+.questions-html ol {
+  list-style: none;
+  counter-reset: q-counter;
+  padding-left: 0;
+}
+.questions-html ol > li {
+  counter-increment: q-counter;
+  padding-left: 3rem;
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-size: 0.9375rem;
+  color: rgba(255,255,255,0.62);
+  line-height: 1.85;
+}
+.questions-html ol > li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+.questions-html ol > li::before {
+  content: counter(q-counter);
+  position: absolute;
+  left: 0;
+  top: 0.2rem;
+  width: 1.6rem;
+  height: 1.6rem;
+  background: rgba(196,147,78,0.08);
+  border: 1px solid rgba(196,147,78,0.2);
+  border-radius: 50%;
+  color: #C4934E;
+  font-size: 0.625rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.questions-html p {
+  font-size: 0.9375rem;
+  color: rgba(255,255,255,0.62);
+  line-height: 1.85;
+  margin: 0;
+}
+.questions-html h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.92);
+  margin-top: 0;
+  margin-bottom: 0.4rem;
+  letter-spacing: -0.01em;
+}
+
+/* Section 10 summary bullets */
+.s10-summary {
+  color: rgba(255,255,255,0.68);
+}
+.s10-summary ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 0;
+}
+.s10-summary li {
+  font-size: 0.9375rem;
+  color: rgba(255,255,255,0.68);
+  line-height: 1.85;
+  margin-bottom: 0.5rem;
+}
+.s10-summary li::marker {
+  color: #C4934E;
+}
+
+/* Cross-References bullet list */
+.cross-refs-list {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+.cross-refs-list li {
+  font-size: 0.9375rem;
+  color: rgba(255,255,255,0.62);
+  line-height: 1.85;
+  margin-bottom: 0.5rem;
+}
+
+/* Golden h3 overrides — must stay last */
+#section-2 h3,
+#section-3 h3 {
+  color: #C4934E !important;
 }

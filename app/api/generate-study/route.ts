@@ -537,6 +537,7 @@ async function fetchPassageText(passage: string): Promise<string> {
 export async function POST(request: Request) {
   const { title, passage, description, theme, audience, tone, depth } =
     await request.json();
+  const { signal } = request;
 
   const passageQuery = passage.toLowerCase().replace(/\s+/g, "+");
   const passageUrl = `https://bible-api.com/${passageQuery}`;
@@ -555,7 +556,7 @@ export async function POST(request: Request) {
   try {
     [result1, result2] = await Promise.all([
       client.messages.create({
-        model: "claude-opus-4-7",
+        model: "claude-opus-4-6",
         max_tokens: 8000,
         system: SYSTEM_PROMPT_1,
         messages: [
@@ -564,9 +565,9 @@ export async function POST(request: Request) {
             content: buildUserPrompt1(title, passage, description, theme, audience, tone, depth, passageText, passageUrl),
           },
         ],
-      }),
+      }, { signal }),
       client.messages.create({
-        model: "claude-opus-4-7",
+        model: "claude-opus-4-6",
         max_tokens: 8000,
         system: SYSTEM_PROMPT_2,
         messages: [
@@ -575,7 +576,7 @@ export async function POST(request: Request) {
             content: buildUserPrompt2(title, passage, description, theme, audience, tone, depth, passageText),
           },
         ],
-      }),
+      }, { signal }),
     ]);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Anthropic API error";
