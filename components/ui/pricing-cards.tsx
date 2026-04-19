@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, CircleCheck, X } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 import { Button } from "@/components/pricing-parts/button";
 import {
@@ -104,6 +105,28 @@ const Pricing2 = ({
   ],
 }: Pricing2Props) => {
   const [isYearly, setIsYearly] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  const handleUpgrade = async () => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      window.location.href = "/signin";
+      return;
+    }
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch("/api/stripe/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: isYearly ? "yearly" : "monthly" }),
+      });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sectionRef = useRef<HTMLElement | null>(null);
@@ -352,14 +375,17 @@ const Pricing2 = ({
                             filter: "blur(10px)",
                           }}
                         />
-                        <a
-                          href={plan.button.url}
-                          className="relative flex w-full items-center justify-center gap-2 px-8 py-3 bg-black text-white rounded-full font-semibold tracking-wide overflow-hidden transition-all hover:bg-neutral-900"
+                        <button
+                          onClick={handleUpgrade}
+                          disabled={checkoutLoading}
+                          className="relative flex w-full items-center justify-center gap-2 px-8 py-3 bg-black text-white rounded-full font-semibold tracking-wide overflow-hidden transition-all hover:bg-neutral-900 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                          <span className="relative z-10">{plan.button.text}</span>
-                          <ArrowRight className="w-4 h-4 relative z-10" />
+                          <span className="relative z-10">
+                            {checkoutLoading ? "Redirecting…" : plan.button.text}
+                          </span>
+                          {!checkoutLoading && <ArrowRight className="w-4 h-4 relative z-10" />}
                           <div className="absolute inset-0 bg-white scale-x-0 hover:scale-x-100 origin-left transition-transform duration-300 opacity-5" />
-                        </a>
+                        </button>
                       </div>
                     ) : (
                       <Button

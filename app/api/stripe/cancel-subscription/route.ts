@@ -1,0 +1,36 @@
+import Stripe from "stripe";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+export async function POST() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const admin = createAdminClient();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("stripe_subscription_id")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile?.stripe_subscription_id) {
+    return Response.json({ error: "No active subscription" }, { status: 400 });
+  }
+
+  await stripe.subscriptions.update(profile.stripe_subscription_id, {
+    cancel_at_period_end: true,
+  });
+
+  await admin
+    .from("profiles")
+    .update({ subscription_status: "canceling" })
+    .eq("id", user.id);
+
+  return Response.json({ success: true });
+}

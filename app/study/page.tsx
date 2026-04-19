@@ -280,32 +280,92 @@ function TableOfContents({ active }: { active: number }) {
   const go = (i: number) =>
     document.getElementById(`section-${i}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
+  const progress = Math.round(((active + 1) / SECTION_LABELS.length) * 100);
+
   return (
-    <nav className="sticky top-24 w-44 shrink-0 hidden xl:block self-start">
-      <p className="text-[9px] font-bold uppercase tracking-[0.22em] mb-4" style={{ color: M }}>
-        Contents
-      </p>
-      <ul className="space-y-0.5">
-        {SECTION_LABELS.map((label, i) => {
-          const on = active === i;
-          return (
-            <li key={i}>
-              <button
-                onClick={() => go(i)}
-                className="flex items-start gap-2.5 w-full text-left py-1.5 transition-colors duration-150"
-                style={{ color: on ? G : M }}
-                onMouseEnter={(e) => { if (!on) (e.currentTarget as HTMLButtonElement).style.color = B; }}
-                onMouseLeave={(e) => { if (!on) (e.currentTarget as HTMLButtonElement).style.color = M; }}
-              >
-                <span className="text-[9px] font-bold tabular-nums mt-0.75 shrink-0" style={{ color: on ? G : `${M}` }}>
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <span className="text-[0.75rem] leading-snug">{label}</span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+    <nav className="sticky top-24 w-52 shrink-0 hidden xl:block self-start">
+
+      {/* Header row */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[8.5px] font-bold uppercase tracking-[0.24em]" style={{ color: M }}>
+          In This Study
+        </span>
+        <span className="text-[9px] font-semibold tabular-nums" style={{ color: G }}>
+          {progress}%
+        </span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="h-px w-full mb-5 rounded-full overflow-hidden" style={{ background: DIV }}>
+        <div
+          className="h-full rounded-full transition-[width] duration-500 ease-out"
+          style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${G}66, ${G})` }}
+        />
+      </div>
+
+      {/* Track + items */}
+      <div className="relative">
+        {/* Vertical track */}
+        <div
+          className="absolute top-[9px] bottom-[9px] w-px"
+          style={{ left: "5px", background: `linear-gradient(to bottom, ${G}50 0%, ${G}50 ${progress}%, ${DIV} ${progress}%, ${DIV} 100%)`, transition: "background 0.5s ease-out" }}
+        />
+
+        <ul>
+          {SECTION_LABELS.map((label, i) => {
+            const on = active === i;
+            const done = i < active;
+
+            return (
+              <li key={i}>
+                <button
+                  onClick={() => go(i)}
+                  className="flex items-start gap-3 w-full text-left py-[7px] group"
+                >
+                  {/* Dot */}
+                  <div className="relative shrink-0 flex items-center justify-center" style={{ width: 11, height: 11, marginTop: 3 }}>
+                    {on && (
+                      <div
+                        className="absolute rounded-full"
+                        style={{ inset: -4, background: `${G}18`, boxShadow: `0 0 8px ${G}40` }}
+                      />
+                    )}
+                    <div
+                      className="rounded-full relative z-10 transition-all duration-300"
+                      style={{
+                        width: on ? 7 : done ? 5 : 5,
+                        height: on ? 7 : done ? 5 : 5,
+                        background: on ? G : done ? `${G}70` : `rgba(255,255,255,0.13)`,
+                        boxShadow: on ? `0 0 5px ${G}90` : "none",
+                        outline: on ? `none` : done ? `none` : `1.5px solid rgba(255,255,255,0.12)`,
+                      }}
+                    />
+                  </div>
+
+                  {/* Text */}
+                  <div className="flex-1 min-w-0 flex items-baseline gap-2">
+                    <span
+                      className="text-[9px] font-bold tabular-nums shrink-0 transition-colors duration-200"
+                      style={{ color: on ? `${G}99` : done ? `${G}55` : "rgba(255,255,255,0.15)" }}
+                    >
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span
+                      className="text-[0.71rem] leading-snug transition-all duration-200"
+                      style={{
+                        color: on ? H : done ? B : M,
+                        fontWeight: on ? 500 : 400,
+                      }}
+                    >
+                      {label}
+                    </span>
+                  </div>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </nav>
   );
 }

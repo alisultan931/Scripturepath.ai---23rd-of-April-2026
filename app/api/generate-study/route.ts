@@ -1,4 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const client = new Anthropic();
 
@@ -535,9 +537,33 @@ async function fetchPassageText(passage: string): Promise<string> {
 }
 
 export async function POST(request: Request) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { title, passage, description, theme, audience, tone, depth } =
     await request.json();
   const { signal } = request;
+
+  const creditCost = depth === "deep_dive" ? 2 : 1;
+
+  const admin = createAdminClient();
+  const { data: deductResult, error: deductError } = await admin.rpc(
+    "deduct_credits",
+    { user_uuid: user.id, amount: creditCost }
+  );
+
+  if (deductError) {
+    console.error("[generate-study] credit deduction error:", deductError);
+    return Response.json({ error: "Failed to process credits" }, { status: 500 });
+  }
+
+  if (deductResult === -1) {
+    return Response.json({ error: "Insufficient credits" }, { status: 402 });
+  }
 
   const passageQuery = passage.toLowerCase().replace(/\s+/g, "+");
   const passageUrl = `https://bible-api.com/${passageQuery}`;
@@ -595,7 +621,18 @@ export async function POST(request: Request) {
   try {
     const sections1 = extractJson(result1);
     const sections2 = extractJson(result2);
-    return Response.json({ ...sections1, ...sections2 });
+    const studyData = { ...sections1, ...sections2 };
+
+    await admin.from("studies").insert({
+      user_id: user.id,
+      title,
+      scripture_ref: passage,
+      study_data: studyData,
+      depth,
+      credits_used: creditCost,
+    });
+
+    return Response.json(studyData);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Failed to parse study";
     return Response.json({ error: msg }, { status: 500 });

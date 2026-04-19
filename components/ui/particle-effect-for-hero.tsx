@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { MousePointer2, ArrowRight, ChevronDown, BookOpen, LogOut } from 'lucide-react';
+import { ArrowRight, ChevronDown, BookOpen, LogOut, LayoutDashboard, Zap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 // --- Types ---
@@ -378,16 +378,26 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
     const [firstName, setFirstName] = useState<string | null>(null);
     const [authLoading, setAuthLoading] = useState(true);
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [isPremium, setIsPremium] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const supabaseRef = useRef(createClient());
 
     useEffect(() => {
         const supabase = supabaseRef.current;
 
-        supabase.auth.getUser().then(({ data: { user } }) => {
+        supabase.auth.getUser().then(async ({ data: { user } }) => {
             if (user) {
                 const fullName: string | undefined = user.user_metadata?.full_name;
                 setFirstName(fullName ? fullName.split(' ')[0] : user.email?.split('@')[0] ?? null);
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('subscription_status')
+                    .eq('id', user.id)
+                    .single();
+                setIsPremium(
+                    profile?.subscription_status === 'active' ||
+                    profile?.subscription_status === 'canceling'
+                );
             }
             setAuthLoading(false);
         });
@@ -398,6 +408,7 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
                 setFirstName(fullName ? fullName.split(' ')[0] : session.user.email?.split('@')[0] ?? null);
             } else {
                 setFirstName(null);
+                setIsPremium(false);
             }
         });
 
@@ -450,25 +461,49 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
                 {authLoading ? (
                     <div className="ml-1 w-20 h-8 rounded-full bg-white/10 animate-pulse" />
                 ) : firstName ? (
-                    <div ref={dropdownRef} className="relative ml-1">
-                        <button
-                            onClick={() => setDropdownOpen(o => !o)}
-                            className="px-5 py-2 bg-white text-black font-semibold rounded-full text-sm transition-all flex items-center gap-1.5 hover:bg-white/90 active:scale-95"
-                        >
-                            {firstName}
-                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
-                        </button>
-
-                        {dropdownOpen && (
-                            <div className="absolute right-0 mt-2 w-40 bg-[#111111] border border-white/10 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] overflow-hidden">
-                                <button
-                                    onClick={handleSignOut}
-                                    className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-white/5 transition-colors"
-                                >
-                                    <LogOut className="w-3.5 h-3.5" /> Sign out
-                                </button>
-                            </div>
+                    <div className="flex items-center gap-2 ml-1">
+                        {!isPremium && (
+                            <Link
+                                href="/#pricing"
+                                className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
+                                style={{
+                                    background: 'linear-gradient(135deg, #D6A85F 0%, #a87c3a 100%)',
+                                    color: '#000',
+                                    boxShadow: '0 0 12px rgba(214,168,95,0.4)',
+                                }}
+                            >
+                                <Zap className="w-3.5 h-3.5" />
+                                Upgrade to Premium
+                            </Link>
                         )}
+                        <div ref={dropdownRef} className="relative">
+                            <button
+                                onClick={() => setDropdownOpen(o => !o)}
+                                className="px-5 py-2 bg-white text-black font-semibold rounded-full text-sm transition-all flex items-center gap-1.5 hover:bg-white/90 active:scale-95"
+                            >
+                                {firstName}
+                                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {dropdownOpen && (
+                                <div className="absolute right-0 mt-2 w-44 bg-[#111111] border border-white/10 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] overflow-hidden">
+                                    <Link
+                                        href="/dashboard"
+                                        onClick={() => setDropdownOpen(false)}
+                                        className="w-full flex items-center gap-2 px-4 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors"
+                                    >
+                                        <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
+                                    </Link>
+                                    <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+                                    <button
+                                        onClick={handleSignOut}
+                                        className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-white/5 transition-colors"
+                                    >
+                                        <LogOut className="w-3.5 h-3.5" /> Sign out
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 ) : (
                     <a href="/signin" className="ml-1 px-5 py-2 bg-white text-black font-semibold rounded-full text-sm transition-all flex items-center gap-1.5 hover:bg-white/90 active:scale-95">
