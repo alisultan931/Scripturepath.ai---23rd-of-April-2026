@@ -4,6 +4,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
+// current_period_end was removed from the top-level Subscription type in newer Stripe SDK versions
+// but still exists on the object at runtime
+function getPeriodEnd(sub: Stripe.Subscription): string | null {
+  const ts = (sub as unknown as Record<string, unknown>).current_period_end;
+  if (typeof ts === "number") return new Date(ts * 1000).toISOString();
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const sig = request.headers.get("stripe-signature");
@@ -40,7 +48,7 @@ export async function POST(request: NextRequest) {
           stripe_subscription_id: subscription.id,
           subscription_status: subscription.status,
           subscription_plan: plan,
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          current_period_end: getPeriodEnd(subscription),
           credits: 30,
         })
         .eq("id", userId);
@@ -66,7 +74,7 @@ export async function POST(request: NextRequest) {
         .from("profiles")
         .update({
           subscription_status: subscription.status,
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          current_period_end: getPeriodEnd(subscription),
           credits: 30,
         })
         .eq("stripe_customer_id", customerId);
@@ -88,7 +96,7 @@ export async function POST(request: NextRequest) {
         .from("profiles")
         .update({
           subscription_status: status,
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          current_period_end: getPeriodEnd(subscription),
         })
         .eq("stripe_customer_id", customerId);
       break;
