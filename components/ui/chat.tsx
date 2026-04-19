@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { AntiGravityCanvas, Navigation } from "@/components/ui/particle-effect-for-hero";
 import AiLoader from "@/components/ui/ai-loader";
 import ProposalPage, { type Proposal } from "@/components/ui/proposal";
+import { createClient } from "@/lib/supabase/client";
 import { ArrowRight, ChevronDown } from "lucide-react";
 
 // --- Auto-resize textarea hook ---
@@ -193,9 +194,25 @@ export default function ScripturePathChat() {
   const [error, setError] = useState<string | null>(null);
   const [inputError, setInputError] = useState(false);
   const [proposal, setProposal] = useState<Proposal | null>(null);
+  const [isPro, setIsPro] = useState(false);
   const [audience, setAudience] = useState(AUDIENCE_OPTIONS[0]);
   const [tone, setTone] = useState(TONE_OPTIONS[0]);
   const [translation, setTranslation] = useState(TRANSLATION_OPTIONS[0].value);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("subscription_status")
+        .eq("id", user.id)
+        .single();
+      if (data?.subscription_status === "active" || data?.subscription_status === "canceling") {
+        setIsPro(true);
+      }
+    });
+  }, []);
 
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
     minHeight: 110,
@@ -264,6 +281,7 @@ export default function ScripturePathChat() {
     return (
       <ProposalPage
         proposal={proposal}
+        isPro={isPro}
         onRetry={handleRetry}
         onStartFromScratch={() => setProposal(null)}
         onGenerate={handleGenerateStudy}

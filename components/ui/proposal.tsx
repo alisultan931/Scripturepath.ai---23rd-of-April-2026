@@ -27,6 +27,7 @@ export interface Proposal {
 
 interface ProposalPageProps {
   proposal: Proposal;
+  isPro?: boolean;
   onRetry: () => void;
   onStartFromScratch: () => void;
   onGenerate: (depth: "normal" | "deep_dive") => void;
@@ -47,7 +48,7 @@ const DEEP_DIVE_ONLY = [
   { icon: "⊟", text: "3-day mini action plan with daily prayer focus" },
 ];
 
-export default function ProposalPage({ proposal, onRetry, onStartFromScratch, onGenerate }: ProposalPageProps) {
+export default function ProposalPage({ proposal, isPro = false, onRetry, onStartFromScratch, onGenerate }: ProposalPageProps) {
   const [deepDive, setDeepDive] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -299,7 +300,7 @@ export default function ProposalPage({ proposal, onRetry, onStartFromScratch, on
               Normal
             </button>
             <button
-              onClick={() => setDeepDive(true)}
+              onClick={() => isPro ? setDeepDive(true) : window.location.href = "/#pricing"}
               className="flex-1 flex items-center justify-center gap-2 py-3 text-sm transition-all deep-dive-btn"
               style={{
                 border: deepDive ? "1px solid rgba(214,168,95,0.6)" : "1px solid rgba(255,255,255,0.12)",
