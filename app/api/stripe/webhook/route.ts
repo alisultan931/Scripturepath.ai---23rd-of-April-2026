@@ -60,14 +60,14 @@ export async function POST(request: NextRequest) {
       // Only add credits on recurring renewal, not the initial payment
       if (invoice.billing_reason !== "subscription_cycle") break;
 
-      const subId = typeof invoice.subscription === "string"
-        ? invoice.subscription
-        : invoice.subscription?.id;
+      const invoiceAny = invoice as unknown as Record<string, unknown>;
+      const rawSub = invoiceAny.subscription;
+      const subId = typeof rawSub === "string" ? rawSub : (rawSub as { id?: string } | null)?.id;
       if (!subId) break;
 
       const subscription = await stripe.subscriptions.retrieve(subId);
-      const customerId =
-        typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+      const rawCustomer = invoiceAny.customer;
+      const customerId = typeof rawCustomer === "string" ? rawCustomer : (rawCustomer as { id?: string } | null)?.id;
       if (!customerId) break;
 
       await admin
