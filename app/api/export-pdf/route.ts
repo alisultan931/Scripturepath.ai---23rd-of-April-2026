@@ -198,7 +198,7 @@ export async function POST(request: Request) {
   try {
     result = await client.messages.create({
       model: "claude-opus-4-7",
-      max_tokens: 4000,
+      max_tokens: 8000,
       system: PDF_SYSTEM_PROMPT,
       messages: [
         {
@@ -218,7 +218,9 @@ export async function POST(request: Request) {
     if (content.type !== "text") throw new Error("Unexpected response format");
     const match = content.text.match(/\{[\s\S]*\}/);
     if (!match) throw new Error("No JSON found in response");
-    const slideSpec = JSON.parse(match[0]);
+    // Remove trailing commas before closing braces/brackets (common LLM output issue)
+    const cleaned = match[0].replace(/,\s*([}\]])/g, "$1");
+    const slideSpec = JSON.parse(cleaned);
     return Response.json(slideSpec);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Failed to parse slide spec";
