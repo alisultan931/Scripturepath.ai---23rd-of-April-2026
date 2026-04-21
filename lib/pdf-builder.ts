@@ -784,26 +784,13 @@ function buildSection10(html: string): string {
       <div class="prayer-html">${prayerHtml}</div>` : ""}`;
 }
 
-const SECTION_DESCRIPTIONS = [
-  "Key facts, genre, and the big story",
-  "Begin your study with prayer",
-  "Historical and cultural setting",
-  "The scripture text and references",
-  "What the text directly says",
-  "Meaning, theology, and cross-references",
-  "How this passage points to Jesus",
-  "Practical steps for daily life",
-  "For personal reflection or group study",
-  "Reflect on key truths and close in prayer",
-];
-
 function buildTocPage(title: string, passage: string): string {
   const items = SECTION_LABELS.map((label, i) => `
     <a href="#section-${i}" class="toc-item">
       <span class="toc-num">${String(i + 1).padStart(2, "0")}</span>
       <span class="toc-label">${esc(label)}</span>
       <span class="toc-dots"></span>
-      <span class="toc-pg">${i + 3}</span>
+      <span class="toc-pg">${i + 2}</span>
     </a>`).join("");
   return `
     <div class="toc-page" id="toc">
@@ -821,27 +808,6 @@ function buildTocPage(title: string, passage: string): string {
     </div>`;
 }
 
-function buildSectionCardsPage(title: string, passage: string): string {
-  const cards = SECTION_LABELS.map((label, i) => `
-    <a href="#section-${i}" class="sc-card">
-      <span class="sc-num">${String(i + 1).padStart(2, "0")}</span>
-      <span class="sc-label">${esc(label)}</span>
-      <span class="sc-desc">${esc(SECTION_DESCRIPTIONS[i])}</span>
-    </a>`).join("");
-  return `
-    <div class="cards-overview-page">
-      <div class="co-header">
-        <span class="toc-brand">Study Overview</span>
-        <p class="co-meta">${esc(title)} · ${esc(passage)}</p>
-      </div>
-      <div class="sc-grid">${cards}</div>
-      <div class="toc-footer" style="margin-top:auto;padding-top:14px;border-top:1px solid rgba(255,255,255,0.06)">
-        <span>Overview</span>
-        <span>2</span>
-      </div>
-    </div>`;
-}
-
 function buildSectionPage(index: number, content: string, title: string, passage: string): string {
   return `
     <div class="section-page" id="section-${index}">
@@ -854,7 +820,7 @@ function buildSectionPage(index: number, content: string, title: string, passage
       <div class="page-footer">
         <a href="#toc" class="footer-back">↑ Contents</a>
         <span class="footer-meta">${esc(title)} · ${esc(passage)}</span>
-        <span class="footer-page">${index + 3}</span>
+        <span class="footer-page">${index + 2}</span>
       </div>
     </div>`;
 }
@@ -886,7 +852,6 @@ export function buildPdfHtmlDirect(study: StudyDataForPdf, title: string, passag
   ];
 
   const tocPage = buildTocPage(title, passage);
-  const cardsPage = buildSectionCardsPage(title, passage);
   const sectionPages = sectionContents
     .map((content, i) => buildSectionPage(i, content, title, passage))
     .join("\n");
@@ -913,7 +878,7 @@ export function buildPdfHtmlDirect(study: StudyDataForPdf, title: string, passag
   }
 
   /* ── Page shells ── */
-  .toc-page, .cards-overview-page, .section-page {
+  .toc-page, .section-page {
     position: relative;
     padding: 44px 60px 48px;
     display: flex;
@@ -925,7 +890,6 @@ export function buildPdfHtmlDirect(study: StudyDataForPdf, title: string, passag
     overflow: hidden;
     break-after: page;
   }
-  .cards-overview-page { break-before: page; break-after: page; height: 100vh; overflow: hidden; }
   .section-page { break-before: page; min-height: 100vh; }
 
   /* ── TOC ── */
@@ -1005,48 +969,6 @@ export function buildPdfHtmlDirect(study: StudyDataForPdf, title: string, passag
     flex-shrink: 0;
   }
 
-  /* ── Cards overview page ── */
-  .co-header { margin-bottom: 24px; }
-  .co-meta { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 4px; font-style: italic; }
-  .sc-grid {
-    flex: 1;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: repeat(5, 1fr);
-    gap: 12px;
-  }
-  .sc-card {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(196,147,78,0.18);
-    border-radius: 10px;
-    padding: 16px 20px;
-    text-decoration: none;
-    color: inherit;
-    transition: border-color 0.15s;
-  }
-  .sc-card:hover { border-color: rgba(196,147,78,0.4); }
-  .sc-num {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    color: ${PG};
-    opacity: 0.65;
-  }
-  .sc-label {
-    font-family: 'Lora', serif;
-    font-size: 13.5px;
-    font-weight: 600;
-    color: rgba(255,255,255,0.88);
-    line-height: 1.3;
-  }
-  .sc-desc {
-    font-size: 11px;
-    color: rgba(255,255,255,0.35);
-    line-height: 1.5;
-  }
   .toc-footer {
     margin-top: 20px;
     display: flex;
@@ -1317,12 +1239,19 @@ export function buildPdfHtmlDirect(study: StudyDataForPdf, title: string, passag
     .toc-page { break-after: page; }
     .section-page { break-before: page; }
     .footer-back { color: ${PG}; }
+
+    /* Keep headings attached to the content that follows */
+    h2, h3 { break-after: avoid; }
+
+    /* Never split a paragraph, list item, blockquote, or card mid-page */
+    p, li, blockquote,
+    .step, .kf-row, .panel-item, .qf-point,
+    .q-group, .s10-takeaway { break-inside: avoid; }
   }
 </style>
 </head>
 <body>
 ${tocPage}
-${cardsPage}
 ${sectionPages}
 <script>
   window.addEventListener('load', function () {
