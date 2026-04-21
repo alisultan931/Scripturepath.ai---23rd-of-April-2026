@@ -215,7 +215,7 @@ const FloatingParticles: React.FC<{ mouseRef: React.RefObject<{ x: number; y: nu
   );
 };
 
-type AuthMode = "signin" | "signup" | "forgot" | "forgot-sent";
+type AuthMode = "signin" | "signup" | "forgot" | "forgot-sent" | "verify-sent";
 
 export const Signin: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -268,7 +268,9 @@ const [error, setError] = useState<string | null>(null);
         setIsSubmitting(false);
         return;
       }
-      setError("Check your email to confirm your account.");
+      setMode("verify-sent");
+      setIsSubmitting(false);
+      return;
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
@@ -279,6 +281,22 @@ const [error, setError] = useState<string | null>(null);
       router.push("/chat");
     }
 
+    setIsSubmitting(false);
+  };
+
+  const handleResendVerification = async () => {
+    setIsSubmitting(true);
+    setError(null);
+    const { error } = await supabase.auth.resend({ type: "signup", email });
+    if (error) {
+      if (error.status === 429 || error.message?.toLowerCase().includes("rate limit")) {
+        setError("Too many requests. Please wait a few minutes before trying again.");
+      } else {
+        setError(error.message);
+      }
+    } else {
+      setError("Verification email resent. Check your inbox.");
+    }
     setIsSubmitting(false);
   };
 
@@ -304,6 +322,7 @@ const [error, setError] = useState<string | null>(null);
     signup: "Create Account",
     forgot: "Reset Password",
     "forgot-sent": "Check Your Email",
+    "verify-sent": "Verify Your Email",
   };
 
   const subheadingMap: Record<AuthMode, string> = {
@@ -311,6 +330,7 @@ const [error, setError] = useState<string | null>(null);
     signup: "Sign up to get started",
     forgot: "Enter your email to receive a reset link",
     "forgot-sent": `We've sent a reset link to ${email}`,
+    "verify-sent": `We've sent a confirmation link to ${email}`,
   };
 
   return (
@@ -336,7 +356,29 @@ const [error, setError] = useState<string | null>(null);
             <p className={`text-sm text-center mb-4 ${error === "Check your email to confirm your account." ? "text-yellow-400" : "text-red-400"}`}>{error}</p>
           )}
 
-          {mode === "forgot-sent" ? (
+          {mode === "verify-sent" ? (
+            <div className="space-y-4">
+              <p className="text-sm text-white/60 text-center">
+                Didn&apos;t receive it? Check your spam folder or{" "}
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  disabled={isSubmitting}
+                  className="text-white hover:underline disabled:opacity-50"
+                >
+                  {isSubmitting ? "Sending…" : "resend the email"}
+                </button>
+                .
+              </p>
+              <button
+                type="button"
+                onClick={() => switchMode("signin")}
+                className="w-full bg-white text-black py-3 px-4 rounded-lg font-medium hover:bg-white/90 transition-colors"
+              >
+                Back to Sign In
+              </button>
+            </div>
+          ) : mode === "forgot-sent" ? (
             <div className="space-y-4">
               <p className="text-sm text-white/60 text-center">
                 Didn&apos;t receive it? Check your spam folder or{" "}
