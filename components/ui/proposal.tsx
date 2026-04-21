@@ -305,7 +305,7 @@ export default function ProposalPage({ proposal, isPro = false, credits = 1, onR
               Normal
             </button>
             <button
-              onClick={() => { if (isPro) { setDeepDive(true); setShowUpgradePrompt(false); } else { setShowUpgradePrompt(true); } }}
+              onClick={() => { setDeepDive(true); setShowUpgradePrompt(false); }}
               className="flex-1 flex items-center justify-center gap-2 py-3 text-sm transition-all deep-dive-btn"
               style={{
                 border: deepDive ? "1px solid rgba(214,168,95,0.6)" : "1px solid rgba(255,255,255,0.12)",
@@ -317,47 +317,9 @@ export default function ProposalPage({ proposal, isPro = false, credits = 1, onR
             >
               <Sparkles className="w-3.5 h-3.5" />
               Deep Dive
-              <span
-                style={{
-                  fontSize: "9px",
-                  padding: "2px 5px",
-                  background: deepDive ? "rgba(214,168,95,0.15)" : "rgba(255,255,255,0.05)",
-                  color: deepDive ? "rgba(214,168,95,0.8)" : "rgba(255,255,255,0.3)",
-                  fontWeight: 600,
-                  letterSpacing: "0.12em",
-                  border: deepDive ? "1px solid rgba(214,168,95,0.25)" : "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                PRO
-              </span>
             </button>
           </div>
 
-          {/* ── Upgrade prompt (free users) ── */}
-          <div
-            className="overflow-hidden transition-all duration-400 ease-in-out"
-            style={{ maxHeight: showUpgradePrompt ? "200px" : "0px", opacity: showUpgradePrompt ? 1 : 0, marginBottom: showUpgradePrompt ? "16px" : "0px" }}
-          >
-            <div style={{ border: "1px solid rgba(196,147,78,0.35)", background: "rgba(196,147,78,0.06)", padding: "16px 20px", marginTop: "4px" }}>
-              <div className="flex items-start gap-3">
-                <Crown className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "rgba(196,147,78,0.85)" }} />
-                <div>
-                  <p style={{ fontSize: "0.82rem", fontWeight: 600, color: "rgba(196,147,78,0.95)", marginBottom: "4px" }}>
-                    Premium Feature
-                  </p>
-                  <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.55, marginBottom: "12px" }}>
-                    Deep Dive unlocks scholarly framing, expanded observations, a 3-day action plan, and much more — available exclusively on Premium.
-                  </p>
-                  <button
-                    onClick={() => setShowUpgradeModal(true)}
-                    style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "0.78rem", fontWeight: 600, color: "rgba(196,147,78,0.95)", letterSpacing: "0.06em", background: "none", border: "none", padding: 0, cursor: "pointer" }}
-                  >
-                    Upgrade to Premium <ArrowRight className="w-3 h-3" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* ── Deep Dive info panel ── */}
           <div

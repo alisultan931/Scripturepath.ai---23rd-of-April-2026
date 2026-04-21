@@ -168,7 +168,7 @@ function DashboardInner() {
     ? Math.max(0, Math.ceil((new Date(profile.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
 
-  const creditMax = isTrial ? 10 : isPremium ? 30 : 3;
+  const creditMax = isTrial ? 10 : isPremium ? 30 : 5;
 
   return (
     <>
@@ -308,7 +308,7 @@ function DashboardInner() {
                   />
                 </div>
                 <p className="text-[10px] mt-1.5 text-right" style={{ color: M }}>
-                  {isTrial ? "10 credits / 7-day trial" : isPremium ? "30 credits / month" : "3 credits on free plan"}
+                  {isTrial ? "10 credits / 7-day trial" : isPremium ? "30 credits / month" : "5 credits on free plan"}
                 </p>
               </div>
             </div>
@@ -415,7 +415,7 @@ function DashboardInner() {
               ) : (
                 <div>
                   <p className="text-sm mb-5" style={{ color: B }}>
-                    You're on the free plan. Upgrade to Premium for 30 credits per month and Deep Dive access.
+                    You're on the free plan. Upgrade to Premium for 30 credits per month and unlimited studies.
                   </p>
                   <div className="flex flex-wrap gap-3">
                     {!profile?.has_used_trial && (

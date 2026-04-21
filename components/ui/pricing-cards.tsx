@@ -69,10 +69,9 @@ const Pricing2 = ({
       monthlyPrice: "$0",
       yearlyPrice: "$0",
       features: [
-        { text: "3 studies per month" },
-        { text: "Normal depth" },
+        { text: "5 studies per month" },
+        { text: "Normal + Deep Dive depth" },
         { text: "Basic library" },
-        { text: "Deep Dive mode", disabled: true },
         { text: "PDF export", disabled: true },
       ],
       button: {

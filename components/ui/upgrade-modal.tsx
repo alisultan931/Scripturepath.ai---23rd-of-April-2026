@@ -5,8 +5,8 @@ import { ArrowRight, CircleCheck, Crown, Zap, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const FEATURES = [
+  "30 credits per month (vs 5 on free)",
   "10 studies per day",
-  "Normal + Deep Dive depth",
   "Full library with search",
   "PDF export for print & share",
   "Priority generation speed",
