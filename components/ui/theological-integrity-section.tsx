@@ -52,7 +52,7 @@ export default function TheologicalIntegritySection() {
   }, []);
 
   return (
-    <section className="bg-black border-t border-white/10 py-24 md:py-32 px-4 selection:bg-white/15 selection:text-white">
+    <section id="theological-integrity" className="bg-black border-t border-white/10 py-24 md:py-32 px-4 selection:bg-white/15 selection:text-white">
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
 
         {/* Left column — features */}

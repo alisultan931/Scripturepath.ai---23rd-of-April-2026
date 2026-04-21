@@ -131,10 +131,10 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
           {/* Price */}
           <div className="mb-6">
             <span className="text-4xl font-bold" style={{ color: "rgba(255,255,255,0.92)" }}>
-              {isYearly ? "$8.30" : "$9.90"}
+              {isYearly ? "$199" : "$19.90"}
             </span>
             <span className="text-sm ml-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>
-              /mo{isYearly ? " · billed yearly" : ""}
+              {isYearly ? "/yr · billed yearly" : "/mo"}
             </span>
           </div>
 

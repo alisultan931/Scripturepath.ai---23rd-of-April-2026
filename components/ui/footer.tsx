@@ -70,7 +70,7 @@ const Footer = () => {
       <div className="mx-auto max-w-7xl px-6 py-12">
         <div className="flex items-start gap-6">
 <p className="text-sm leading-relaxed text-white/70 max-w-2xl">
-            Description will go here. It can be a tagline, a mission statement, or a brief
+            Your daily companion for scripture study and spiritual growth. Discover, reflect, and deepen your understanding of sacred texts — one verse at a time.
           </p>
         </div>
       </div>

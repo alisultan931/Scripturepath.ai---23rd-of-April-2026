@@ -454,9 +454,9 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
                 {/* Nav links */}
                 {showNavLinks && !firstName && (
                 <div className="hidden md:flex items-center">
-                    <a href="#" className="px-4 py-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-full hover:bg-white/5">Trust</a>
-                    <a href="#" className="px-4 py-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-full hover:bg-white/5">Method</a>
-                    <a href="#" className="px-4 py-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-full hover:bg-white/5">Structure</a>
+                    <button onClick={() => document.getElementById('theological-integrity')?.scrollIntoView({ behavior: 'smooth' })} className="px-4 py-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-full hover:bg-white/5">Trust</button>
+                    <button onClick={() => document.getElementById('whats-inside')?.scrollIntoView({ behavior: 'smooth' })} className="px-4 py-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-full hover:bg-white/5">Method</button>
+                    <button onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })} className="px-4 py-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors rounded-full hover:bg-white/5">Structure</button>
                 </div>
                 )}
 
@@ -554,7 +554,7 @@ const HeroContent: React.FC = () => {
                 </div>
 
                 <h1 className="max-w-5xl mx-auto text-4xl md:text-6xl lg:text-7xl font-medium tracking-tight leading-[1.1] text-white">
-                  Prepare your sermon in minutes,{" "}
+                  Prepare your study in minutes,{" "}
                   <span className="text-white/60">not hours.</span>
                 </h1>
 
@@ -646,7 +646,7 @@ const HeroContent: React.FC = () => {
                 </div>
 
                 <div className="pt-4 flex items-center justify-center gap-6 text-xs font-medium" style={{ color: '#E8C992' }}>
-                    <span>ESV · NIV · NASB Verified</span>
+                    <span>Always KJV Verified Scripture</span>
                     <span>No Fabricated Theology</span>
                     <span>Christ-Centered Always</span>
                 </div>

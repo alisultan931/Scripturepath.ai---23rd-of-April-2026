@@ -22,7 +22,7 @@ export default function SparklesSection() {
   const next = () => setActive(i => Math.min(ITEMS.length - 1, i + 1))
 
   return (
-    <div className="w-full flex flex-col items-center justify-center overflow-hidden bg-black pb-20">
+    <div id="whats-inside" className="w-full flex flex-col items-center justify-center overflow-hidden bg-black pb-20">
 
       <p className="text-xs uppercase tracking-widest mb-6 relative z-20 pt-16" style={{ color: "#D6A85F" }}>
         What&apos;s inside every study

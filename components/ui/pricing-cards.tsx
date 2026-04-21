@@ -84,10 +84,10 @@ const Pricing2 = ({
     {
       id: "premium",
       name: "Premium",
-      priceLabel: "$9.90",
+      priceLabel: "$19.90",
       billingNote: "Billed monthly",
-      monthlyPrice: "$9.90",
-      yearlyPrice: "$8.30",
+      monthlyPrice: "$19.90",
+      yearlyPrice: "$199",
       mostPopular: true,
       features: [
         { text: "10 studies per day" },
@@ -319,10 +319,10 @@ const Pricing2 = ({
                     <span className="text-5xl font-bold text-white">
                       {isYearly ? plan.yearlyPrice : plan.priceLabel}
                       {plan.id !== "free" && (
-                        <span className="text-lg font-normal text-zinc-400">/mo</span>
+                        <span className="text-lg font-normal text-zinc-400">{isYearly ? "/yr" : "/mo"}</span>
                       )}
                     </span>
-                    <p className="text-sm text-zinc-500">{plan.billingNote}</p>
+                    <p className="text-sm text-zinc-500">{plan.id === "premium" ? (isYearly ? "Billed yearly" : "Billed monthly") : plan.billingNote}</p>
                   </CardHeader>
 
                   <CardContent>
