@@ -27,12 +27,40 @@ export async function POST(request: NextRequest) {
   const admin = createAdminClient();
   const { data: profile } = await admin
     .from("profiles")
-    .select("stripe_customer_id, has_used_trial, credits")
+    .select("stripe_customer_id, has_used_trial, credits, subscription_status, stripe_subscription_id")
     .eq("id", user.id)
     .single();
 
   if (isTrial && profile?.has_used_trial) {
     return Response.json({ error: "Free trial already used" }, { status: 400 });
+  }
+
+  const origin = request.headers.get("origin") ?? "http://localhost:3000";
+
+  // Upgrade an active trial in-place instead of creating a second subscription
+  if (!isTrial && profile?.subscription_status === "trialing" && profile?.stripe_subscription_id) {
+    const existingSub = await stripe.subscriptions.retrieve(
+      profile.stripe_subscription_id as string
+    );
+    const itemId = existingSub.items.data[0].id;
+
+    await stripe.subscriptions.update(profile.stripe_subscription_id as string, {
+      trial_end: "now",
+      proration_behavior: "create_prorations",
+      items: [{ id: itemId, price: priceId }],
+    });
+
+    await admin
+      .from("profiles")
+      .update({
+        subscription_status: "active",
+        subscription_plan: billingPlan,
+        credits: 30,
+        trial_ends_at: null,
+      })
+      .eq("id", user.id);
+
+    return Response.json({ url: `${origin}/dashboard?success=true` });
   }
 
   let customerId = profile?.stripe_customer_id as string | undefined;
@@ -48,8 +76,6 @@ export async function POST(request: NextRequest) {
       .update({ stripe_customer_id: customerId })
       .eq("id", user.id);
   }
-
-  const origin = request.headers.get("origin") ?? "http://localhost:3000";
 
   const sessionParams: Stripe.Checkout.SessionCreateParams = {
     customer: customerId,

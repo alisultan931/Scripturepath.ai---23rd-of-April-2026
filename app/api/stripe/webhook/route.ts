@@ -83,8 +83,10 @@ export async function POST(request: NextRequest) {
       const invoice = event.data.object as Stripe.Invoice;
       const isRenewal = invoice.billing_reason === "subscription_cycle";
       const isFirstCharge = invoice.billing_reason === "subscription_create";
+      // Fired when a trial is ended early and the first real charge is collected
+      const isTrialUpgrade = invoice.billing_reason === "subscription_update";
 
-      if (!isRenewal && !isFirstCharge) break;
+      if (!isRenewal && !isFirstCharge && !isTrialUpgrade) break;
 
       const invoiceAny = invoice as unknown as Record<string, unknown>;
       const rawSub = invoiceAny.subscription;
@@ -106,8 +108,8 @@ export async function POST(request: NextRequest) {
           subscription_status: subscription.status,
           current_period_end: getPeriodEnd(subscription),
           credits: 30,
-          // Clear trial fields when trial converts to paid
-          ...(isFirstCharge ? { trial_ends_at: null } : {}),
+          // Clear trial fields when trial converts to paid (normal or early upgrade)
+          ...((isFirstCharge || isTrialUpgrade) ? { trial_ends_at: null } : {}),
         })
         .eq("stripe_customer_id", customerId);
       break;
