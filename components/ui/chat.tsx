@@ -197,6 +197,7 @@ export default function ScripturePathChat() {
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [isPro, setIsPro] = useState(false);
+  const [isTrial, setIsTrial] = useState(false);
   const [credits, setCredits] = useState<number>(1);
   const [audience, setAudience] = useState(AUDIENCE_OPTIONS[0]);
   const [tone, setTone] = useState(TONE_OPTIONS[0]);
@@ -218,6 +219,9 @@ export default function ScripturePathChat() {
       if (data?.subscription_status === "active" || data?.subscription_status === "canceling") {
         setIsPro(true);
       }
+      if (data?.subscription_status === "trialing") {
+        setIsTrial(true);
+      }
       if (typeof data?.credits === "number") {
         setCredits(data.credits);
       }
@@ -229,7 +233,7 @@ export default function ScripturePathChat() {
     maxHeight: 220,
   });
 
-  const DAILY_LIMIT = 10;
+  const DAILY_LIMIT = isTrial ? 20 : 10;
   const DAILY_KEY = "proposal_daily_limit";
 
   const tryConsumeLimit = (): boolean => {
@@ -326,6 +330,7 @@ export default function ScripturePathChat() {
         onGenerate={handleGenerateStudy}
         retryLimitReached={limitReached}
         retryResetAt={limitResetAt ?? undefined}
+        dailyLimit={DAILY_LIMIT}
       />
     );
   }

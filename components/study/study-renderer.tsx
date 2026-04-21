@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { BookOpen, User, Calendar, Users, Sparkles, Clock, FileDown, Loader2 } from "lucide-react";
 import { Navigation } from "@/components/ui/particle-effect-for-hero";
-import { buildPdfHtml, type SlideSpec } from "@/lib/pdf-builder";
+import { buildPdfHtmlDirect } from "@/lib/pdf-builder";
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 export const H   = "rgba(255,255,255,0.92)";
@@ -388,11 +388,11 @@ export function StudyContent({ study, title, passage, description, depth, backHr
       const res = await fetch("/api/export-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studyData: study }),
+        body: JSON.stringify({}),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Export failed");
-      const html = buildPdfHtml(json as SlideSpec);
+      const html = buildPdfHtmlDirect(study, title, passage);
       const blob = new Blob([html], { type: "text/html" });
       const url = URL.createObjectURL(blob);
       const win = window.open(url, "_blank");

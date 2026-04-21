@@ -192,7 +192,7 @@ function questionsListSlide(d: Record<string, unknown>, num: number): string {
     </div>`;
 }
 
-// ── HTML escape ───────────────────────────────────────────────────────────────
+// ── HTML escape (shared) ──────────────────────────────────────────────────────
 
 function esc(s: unknown): string {
   if (s == null) return "";
@@ -691,6 +691,558 @@ ${slidesHtml}
 <script>
   window.addEventListener('load', function () {
     setTimeout(function () { window.print(); }, 400);
+  });
+</script>
+</body>
+</html>`;
+}
+
+// ── Direct PDF builder (no Claude — renders study HTML as-is) ─────────────────
+
+interface KeyFacts {
+  book_date: string;
+  traditional_attribution: string;
+  tradition_note: string | null;
+  key_figure: string;
+  genre: string;
+  key_theme: string;
+  read_time: string;
+  passage_url?: string;
+}
+
+interface StudyDataForPdf {
+  section_01: { key_facts: KeyFacts; html_content: string };
+  section_02: string;
+  section_03: string;
+  section_04: string;
+  section_05: string;
+  section_06: string;
+  section_07: string;
+  section_08: string;
+  section_09: string;
+  section_10: string;
+}
+
+const PG = "#C4934E";
+
+const SECTION_LABELS = [
+  "At a Glance",
+  "Opening Prayer",
+  "Context & Background",
+  "Read the Passage",
+  "Key Observations",
+  "Key Takeaways & Interpretation",
+  "Christ Connection",
+  "Life Application",
+  "Discussion Questions",
+  "Summary & Closing Prayer",
+];
+
+function buildSection01(data: StudyDataForPdf["section_01"], passage: string): string {
+  const { key_facts: kf, html_content } = data;
+  const genres = kf.genre.split(/[|,/]/).map((g) => g.trim()).filter(Boolean);
+  const genreChips = genres.map((g) => `<span class="genre-chip">${esc(g)}</span>`).join("");
+  const facts = [
+    { label: "Author", value: kf.traditional_attribution + (kf.tradition_note ? ` — ${kf.tradition_note}` : "") },
+    { label: "Date", value: kf.book_date },
+    { label: "Key Figures", value: kf.key_figure },
+    { label: "Key Theme", value: kf.key_theme },
+    { label: "Read Time", value: kf.read_time },
+  ];
+  const factsHtml = facts.map((f, i) => `
+    <div class="kf-row${i < facts.length - 1 ? " kf-row-border" : ""}">
+      <div class="kf-label">${esc(f.label)}</div>
+      <div class="kf-value">${esc(f.value)}</div>
+    </div>`).join("");
+  return `
+    <div class="s01-badges">
+      <span class="passage-chip">${esc(passage)}</span>
+      ${genreChips}
+    </div>
+    <p class="subsection-label">The Big Story</p>
+    <div class="study-html s01-story">${html_content}</div>
+    <div class="kf-table">${factsHtml}</div>`;
+}
+
+function buildSection10(html: string): string {
+  const ulMatch   = html.match(/(<ul>[\s\S]*?<\/ul>)/i);
+  const bqMatch   = html.match(/<blockquote>([\s\S]*?)<\/blockquote>/i);
+  const summaryHtml  = ulMatch  ? ulMatch[1]  : "";
+  const takeawayText = bqMatch  ? bqMatch[1]  : "";
+  const prayerHtml   = html
+    .replace(/<ul>[\s\S]*?<\/ul>/i, "")
+    .replace(/<blockquote>[\s\S]*?<\/blockquote>/i, "")
+    .trim();
+  return `
+    ${summaryHtml ? `<div class="s10-summary">${summaryHtml}</div>` : ""}
+    ${takeawayText ? `
+      <div class="s10-takeaway">
+        <span class="takeaway-icon">✦</span>
+        <p>${takeawayText}</p>
+      </div>` : ""}
+    ${prayerHtml ? `<div class="section-divider" style="margin:1.75rem 0"></div>
+      <div class="prayer-html">${prayerHtml}</div>` : ""}`;
+}
+
+function buildTocPage(title: string, passage: string): string {
+  const items = SECTION_LABELS.map((label, i) => `
+    <a href="#section-${i}" class="toc-item">
+      <span class="toc-num">${String(i + 1).padStart(2, "0")}</span>
+      <span class="toc-label">${esc(label)}</span>
+      <span class="toc-dots"></span>
+      <span class="toc-page">${i + 2}</span>
+    </a>`).join("");
+  return `
+    <div class="toc-page" id="toc">
+      <div class="toc-brand">ScripturePath Bible Study</div>
+      <h1 class="toc-title">${esc(title)}</h1>
+      <div class="toc-passage-row">
+        <span class="toc-passage">${esc(passage)}</span>
+      </div>
+      <div class="toc-rule"></div>
+      <nav class="toc-list">${items}</nav>
+      <div class="toc-footer">
+        <span>Contents</span>
+        <span>1</span>
+      </div>
+    </div>`;
+}
+
+function buildSectionPage(index: number, content: string, title: string, passage: string): string {
+  return `
+    <div class="section-page" id="section-${index}">
+      <div class="section-header">
+        <span class="sec-num">${String(index + 1).padStart(2, "0")}</span>
+        <h2 class="sec-label">${esc(SECTION_LABELS[index])}</h2>
+      </div>
+      <div class="sec-rule"></div>
+      <div class="section-content">${content}</div>
+      <div class="page-footer">
+        <a href="#toc" class="footer-back">↑ Contents</a>
+        <span class="footer-meta">${esc(title)} · ${esc(passage)}</span>
+        <span class="footer-page">${index + 2}</span>
+      </div>
+    </div>`;
+}
+
+export function buildPdfHtmlDirect(study: StudyDataForPdf, title: string, passage: string): string {
+  const s06 = study.section_06
+    .replace(/(<h3>)(Takeaway\s+\d+:)/gi, `$1<span style="color:${PG}">$2</span>`)
+    .replace(/(<h3>)(Cross-References)(<\/h3>)/gi, `$1<span style="color:${PG}">$2</span>$3`)
+    .replace(/(<h3>(?:<span[^>]*>)?Cross-References(?:<\/span>)?<\/h3>)\s*(<ul>)/gi, `$1<ul class="cross-refs-list">`);
+
+  const s08 = study.section_08
+    .replace(/(<h3>)(Application\s+\d+:)/gi, `$1<span style="color:${PG}">$2</span>`)
+    .replace(/(<h3>)(Accountability Suggestion)(<\/h3>)/gi, `$1<span style="color:${PG}">$2</span>$3`);
+
+  const sectionContents = [
+    buildSection01(study.section_01, passage),
+    `<div class="prayer-html">${study.section_02}</div>`,
+    `<div class="study-html">${study.section_03}</div>`,
+    `<div class="passage-section-notice">Read the passage in your Bible before beginning. Links are provided in the guide below.</div>
+     <div class="passage-html">${study.section_04}</div>`,
+    `<p class="section-pretext">What does the text actually say? These observations are drawn directly from the passage — no interpretation yet.</p>
+     <div class="study-html obs-section">${study.section_05}</div>`,
+    `<div class="study-html">${s06}</div>`,
+    `<div class="study-html">${study.section_07}</div>`,
+    `<div class="study-html">${s08}</div>`,
+    `<p class="section-pretext">Use these questions for personal reflection or group discussion.</p>
+     <div class="questions-html">${study.section_09}</div>`,
+    buildSection10(study.section_10),
+  ];
+
+  const tocPage = buildTocPage(title, passage);
+  const sectionPages = sectionContents
+    .map((content, i) => buildSectionPage(i, content, title, passage))
+    .join("\n");
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>${esc(title)} — ScripturePath</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  @page { size: A4; margin: 18mm 20mm 15mm; }
+
+  html, body {
+    font-family: 'Inter', sans-serif;
+    background: #0D0D0D;
+    color: rgba(255,255,255,0.92);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ── Page shells ── */
+  .toc-page, .section-page {
+    position: relative;
+    min-height: 100vh;
+    padding: 52px 64px 72px;
+    display: flex;
+    flex-direction: column;
+  }
+  .section-page { break-before: page; }
+
+  /* ── TOC ── */
+  .toc-brand {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: ${PG};
+    opacity: 0.65;
+    margin-bottom: 24px;
+  }
+  .toc-title {
+    font-family: 'Lora', serif;
+    font-size: clamp(32px, 4vw, 52px);
+    font-weight: 600;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    color: rgba(255,255,255,0.95);
+    margin-bottom: 14px;
+  }
+  .toc-passage-row { margin-bottom: 36px; }
+  .toc-passage {
+    font-family: 'Lora', serif;
+    font-style: italic;
+    font-size: 15px;
+    color: ${PG};
+    opacity: 0.85;
+  }
+  .toc-rule {
+    height: 1px;
+    background: rgba(255,255,255,0.08);
+    margin-bottom: 36px;
+  }
+  .toc-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .toc-item {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.15s;
+  }
+  .toc-item:last-child { border-bottom: none; }
+  .toc-item:hover .toc-label { color: rgba(255,255,255,0.9); }
+  .toc-num {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: ${PG};
+    opacity: 0.7;
+    width: 22px;
+    flex-shrink: 0;
+  }
+  .toc-label {
+    font-size: 13.5px;
+    color: rgba(255,255,255,0.68);
+    flex: 1;
+    min-width: 0;
+  }
+  .toc-dots {
+    flex: 1;
+    border-bottom: 1px dotted rgba(255,255,255,0.12);
+    margin: 0 10px 4px;
+    max-width: 120px;
+  }
+  .toc-page {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.28);
+    flex-shrink: 0;
+  }
+  .toc-footer {
+    margin-top: 36px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: rgba(255,255,255,0.2);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 12px;
+  }
+
+  /* ── Section header ── */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+  .sec-num {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: ${PG};
+    opacity: 0.7;
+  }
+  .sec-label {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: rgba(255,255,255,0.92);
+  }
+  .sec-rule {
+    height: 1px;
+    background: rgba(255,255,255,0.07);
+    margin-bottom: 28px;
+  }
+  .section-content { flex: 1; }
+
+  /* ── Page footer ── */
+  .page-footer {
+    margin-top: 36px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    color: rgba(255,255,255,0.2);
+  }
+  .footer-back {
+    color: ${PG};
+    opacity: 0.5;
+    text-decoration: none;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+  .footer-meta { flex: 1; text-align: center; }
+  .footer-page { font-weight: 600; }
+
+  /* ── Section 01 ── */
+  .s01-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+  .passage-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 500;
+    color: ${PG};
+    background: rgba(196,147,78,0.1);
+    border: 1px solid rgba(196,147,78,0.22);
+    border-radius: 6px; padding: 4px 12px;
+  }
+  .genre-chip {
+    display: inline-block;
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 6px; padding: 4px 10px;
+  }
+  .subsection-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.2em;
+    text-transform: uppercase; color: rgba(255,255,255,0.35);
+    margin-bottom: 10px;
+  }
+  .s01-story { margin-bottom: 28px; }
+  .kf-table { border-top: 1px solid rgba(255,255,255,0.07); margin-top: 8px; }
+  .kf-row { display: flex; gap: 20px; padding: 12px 0; }
+  .kf-row-border { border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .kf-label {
+    display: flex; align-items: center; gap: 6px;
+    width: 110px; flex-shrink: 0;
+    font-size: 9px; font-weight: 600; letter-spacing: 0.18em;
+    text-transform: uppercase; color: rgba(255,255,255,0.35);
+  }
+  .kf-value { font-size: 14px; color: rgba(255,255,255,0.62); line-height: 1.6; }
+
+  /* ── Passage section notice ── */
+  .passage-section-notice {
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(196,147,78,0.1);
+    border: 1px solid rgba(196,147,78,0.22);
+    border-radius: 10px; padding: 12px 16px;
+    font-size: 12px; color: rgba(255,255,255,0.62);
+    margin-bottom: 22px; line-height: 1.5;
+  }
+
+  /* ── Section pretext ── */
+  .section-pretext {
+    font-size: 12px; color: rgba(255,255,255,0.35);
+    margin-bottom: 18px; line-height: 1.7;
+  }
+
+  /* ── Section 10 ── */
+  .s10-takeaway {
+    display: flex; gap: 12px; align-items: flex-start;
+    background: rgba(196,147,78,0.1);
+    border: 1px solid rgba(196,147,78,0.22);
+    border-radius: 10px; padding: 16px 20px;
+    margin: 24px 0;
+  }
+  .takeaway-icon { font-size: 16px; color: ${PG}; margin-top: 1px; flex-shrink: 0; }
+  .s10-takeaway p { font-size: 14px; line-height: 1.7; font-style: italic; color: rgba(255,255,255,0.88); }
+
+  /* ── Study HTML (sections 03, 06, 07, 08) ── */
+  .study-html h3 {
+    font-size: 14.5px; font-weight: 600;
+    color: rgba(255,255,255,0.92);
+    margin-top: 1.75rem; margin-bottom: 0.5rem;
+    letter-spacing: -0.01em;
+  }
+  .study-html p {
+    font-size: 14px; color: rgba(255,255,255,0.62);
+    line-height: 1.85; margin-bottom: 0.9rem;
+  }
+  .study-html ul, .study-html ol { padding-left: 1.35rem; margin-bottom: 0.9rem; }
+  .study-html li {
+    font-size: 14px; color: rgba(255,255,255,0.62);
+    line-height: 1.85; margin-bottom: 0.45rem;
+  }
+  .study-html strong { color: rgba(255,255,255,0.88); font-weight: 600; }
+  .study-html em {
+    color: ${PG}; font-style: normal;
+    font-size: 10.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.07em;
+  }
+  .study-html hr { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 1.5rem 0; }
+  .study-html blockquote {
+    border-left: 2px solid rgba(196,147,78,0.4);
+    padding: 0.5rem 1rem; margin: 1rem 0;
+    font-size: 14px; color: rgba(255,255,255,0.78);
+    font-style: italic; line-height: 1.85;
+  }
+  .study-html a { color: ${PG}; text-underline-offset: 3px; }
+
+  /* Observations (section 05) */
+  .study-html.obs-section ol {
+    list-style: none; counter-reset: obs-counter; padding-left: 0;
+  }
+  .study-html.obs-section ol > li {
+    counter-increment: obs-counter;
+    padding-left: 2.75rem; position: relative; margin-bottom: 1.1rem;
+  }
+  .study-html.obs-section ol > li::before {
+    content: counter(obs-counter);
+    position: absolute; left: 0; top: 0.2rem;
+    width: 1.5rem; height: 1.5rem;
+    background: rgba(196,147,78,0.08);
+    border: 1px solid rgba(196,147,78,0.2);
+    border-radius: 50%; color: ${PG};
+    font-size: 9px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* Prayer sections (02, 10) */
+  .prayer-html { color: rgba(255,255,255,0.68); }
+  .prayer-html p {
+    font-size: 14px; color: rgba(255,255,255,0.68);
+    line-height: 2; margin-bottom: 0.8rem;
+    text-align: center; font-style: italic;
+  }
+  .prayer-html strong { color: rgba(255,255,255,0.88); font-weight: 600; font-style: normal; }
+  .prayer-html h3 {
+    font-size: 14px; font-weight: 600;
+    color: rgba(255,255,255,0.92);
+    text-align: center; margin-top: 1.5rem; margin-bottom: 0.5rem;
+    font-style: normal; letter-spacing: -0.01em;
+  }
+  .prayer-html ul, .prayer-html ol { margin-bottom: 1rem; padding-left: 1.25rem; }
+  .prayer-html li {
+    font-size: 14px; color: rgba(255,255,255,0.68);
+    line-height: 1.85; margin-bottom: 0.4rem;
+  }
+
+  /* Passage section (04) */
+  .passage-html { color: rgba(255,255,255,0.62); }
+  .passage-html h3 {
+    font-size: 14.5px; font-weight: 600;
+    color: rgba(255,255,255,0.92);
+    margin-top: 1.75rem; margin-bottom: 0.5rem; letter-spacing: -0.01em;
+  }
+  .passage-html p { font-size: 14px; color: rgba(255,255,255,0.62); line-height: 1.85; margin-bottom: 0.9rem; }
+  .passage-html strong { color: rgba(255,255,255,0.88); font-weight: 600; }
+  .passage-html a { color: ${PG}; text-underline-offset: 3px; }
+  .passage-html ol {
+    list-style: none; counter-reset: pass-counter; padding-left: 0; margin-bottom: 0.9rem;
+  }
+  .passage-html ol > li {
+    counter-increment: pass-counter;
+    padding-left: 2.75rem; position: relative; margin-bottom: 1.25rem;
+    font-size: 14px; color: rgba(255,255,255,0.62); line-height: 1.85;
+  }
+  .passage-html ol > li::before {
+    content: counter(pass-counter);
+    position: absolute; left: 0; top: 0.2rem;
+    width: 1.5rem; height: 1.5rem;
+    background: rgba(196,147,78,0.08);
+    border: 1px solid rgba(196,147,78,0.2);
+    border-radius: 50%; color: ${PG};
+    font-size: 9px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .passage-html ul { padding-left: 1.35rem; margin-bottom: 0.9rem; }
+  .passage-html li { font-size: 14px; color: rgba(255,255,255,0.62); line-height: 1.85; margin-bottom: 0.4rem; }
+  .passage-html blockquote {
+    color: rgba(255,255,255,0.82); font-style: italic;
+    border-left: 2px solid ${PG}; padding-left: 1rem; margin: 1rem 0;
+  }
+
+  /* Discussion questions (09) */
+  .questions-html ol { list-style: none; counter-reset: q-counter; padding-left: 0; }
+  .questions-html ol > li {
+    counter-increment: q-counter;
+    padding-left: 2.75rem; padding-bottom: 1.25rem; margin-bottom: 1.25rem;
+    position: relative; border-bottom: 1px solid rgba(255,255,255,0.06);
+    font-size: 14px; color: rgba(255,255,255,0.62); line-height: 1.85;
+  }
+  .questions-html ol > li:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+  .questions-html ol > li::before {
+    content: counter(q-counter);
+    position: absolute; left: 0; top: 0.2rem;
+    width: 1.5rem; height: 1.5rem;
+    background: rgba(196,147,78,0.08);
+    border: 1px solid rgba(196,147,78,0.2);
+    border-radius: 50%; color: ${PG};
+    font-size: 9px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .questions-html p { font-size: 14px; color: rgba(255,255,255,0.62); line-height: 1.85; margin: 0; }
+  .questions-html h3 {
+    font-size: 14.5px; font-weight: 600;
+    color: rgba(255,255,255,0.92);
+    margin-top: 0; margin-bottom: 0.35rem; letter-spacing: -0.01em;
+  }
+
+  /* Section 10 summary */
+  .s10-summary { color: rgba(255,255,255,0.68); margin-bottom: 8px; }
+  .s10-summary ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 0; }
+  .s10-summary li { font-size: 14px; color: rgba(255,255,255,0.68); line-height: 1.85; margin-bottom: 0.45rem; }
+  .s10-summary li::marker { color: ${PG}; }
+
+  /* Cross-references list */
+  .cross-refs-list { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 0.9rem; }
+  .cross-refs-list li { font-size: 14px; color: rgba(255,255,255,0.62); line-height: 1.85; margin-bottom: 0.45rem; }
+
+  /* Section divider */
+  .section-divider { height: 1px; background: rgba(255,255,255,0.07); }
+
+  /* ── Print ── */
+  @media print {
+    .toc-page { break-after: page; }
+    .section-page { break-before: page; }
+    .footer-back { color: ${PG}; }
+  }
+</style>
+</head>
+<body>
+${tocPage}
+${sectionPages}
+<script>
+  window.addEventListener('load', function () {
+    setTimeout(function () { window.print(); }, 600);
   });
 </script>
 </body>

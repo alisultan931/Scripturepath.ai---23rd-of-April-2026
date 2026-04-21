@@ -56,6 +56,7 @@ interface ProposalPageProps {
   onGenerate: (depth: "normal" | "deep_dive", edited: Proposal) => void;
   retryLimitReached?: boolean;
   retryResetAt?: number;
+  dailyLimit?: number;
 }
 
 const DEEP_DIVE_ROWS = [
@@ -73,7 +74,7 @@ const DEEP_DIVE_ONLY = [
   { icon: "⊟", text: "3-day mini action plan with daily prayer focus" },
 ];
 
-export default function ProposalPage({ proposal, isPro = false, credits = 1, onRetry, onStartFromScratch, onGenerate, retryLimitReached = false, retryResetAt }: ProposalPageProps) {
+export default function ProposalPage({ proposal, isPro = false, credits = 1, onRetry, onStartFromScratch, onGenerate, retryLimitReached = false, retryResetAt, dailyLimit = 10 }: ProposalPageProps) {
   const [deepDive, setDeepDive] = useState(false);
   const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -538,7 +539,7 @@ export default function ProposalPage({ proposal, isPro = false, credits = 1, onR
 
             {retryLimitReached && (
               <p className="text-center text-xs mt-1" style={{ color: "rgba(255,160,80,0.8)" }}>
-                You&rsquo;ve reached the 10 free retries for today.{" "}
+                You&rsquo;ve reached the {dailyLimit} free retries for today.{" "}
                 {retryResetAt
                   ? `Try again in ${Math.ceil((retryResetAt - Date.now()) / 3600000)} hour${Math.ceil((retryResetAt - Date.now()) / 3600000) === 1 ? "" : "s"}.`
                   : "Try again in 24 hours."}{" "}
