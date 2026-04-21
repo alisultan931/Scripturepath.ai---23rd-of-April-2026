@@ -5,11 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { BookOpen, Zap, Crown, Calendar, AlertCircle, CheckCircle2, ArrowRight, RefreshCw } from "lucide-react";
+import { BookOpen, Zap, Crown, Calendar, AlertCircle, CheckCircle2, ArrowRight, RefreshCw, Clock } from "lucide-react";
 import UpgradeModal from "@/components/ui/upgrade-modal";
 import CancelModal from "@/components/ui/cancel-modal";
 
-// ── Design tokens (matching study page) ───────────────────────────────────────
 const H   = "rgba(255,255,255,0.92)";
 const B   = "rgba(255,255,255,0.62)";
 const M   = "rgba(255,255,255,0.35)";
@@ -25,6 +24,8 @@ interface Profile {
   subscription_status: string | null;
   subscription_plan: string | null;
   current_period_end: string | null;
+  has_used_trial: boolean;
+  trial_ends_at: string | null;
 }
 
 function StatusBadge({ status }: { status: string | null }) {
@@ -33,6 +34,14 @@ function StatusBadge({ status }: { status: string | null }) {
       <span className="text-xs font-semibold px-3 py-1 rounded-full"
         style={{ color: M, background: "rgba(255,255,255,0.06)", border: `1px solid ${DIV}` }}>
         Free Plan
+      </span>
+    );
+  }
+  if (status === "trialing") {
+    return (
+      <span className="text-xs font-semibold px-3 py-1 rounded-full flex items-center gap-1.5"
+        style={{ color: "#7EB89A", background: "rgba(126,184,154,0.1)", border: "1px solid rgba(126,184,154,0.25)" }}>
+        <Clock className="w-3 h-3" /> Free Trial
       </span>
     );
   }
@@ -59,6 +68,7 @@ function DashboardInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const justUpgraded = searchParams.get("success") === "true";
+  const justStartedTrial = searchParams.get("success") === "trial";
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [firstName, setFirstName] = useState<string>("");
@@ -81,7 +91,7 @@ function DashboardInner() {
 
       const { data } = await supabase
         .from("profiles")
-        .select("credits, subscription_status, subscription_plan, current_period_end")
+        .select("credits, subscription_status, subscription_plan, current_period_end, has_used_trial, trial_ends_at")
         .eq("id", user.id)
         .single();
 
@@ -97,11 +107,21 @@ function DashboardInner() {
       const res = await fetch("/api/stripe/cancel-subscription", { method: "POST" });
       if (res.ok) {
         const body = await res.json().catch(() => ({}));
-        setProfile((p) => p ? {
-          ...p,
-          subscription_status: "canceling",
-          ...(body.current_period_end ? { current_period_end: body.current_period_end } : {}),
-        } : p);
+        if (body.immediate) {
+          // Trial canceled immediately — webhook will update DB, reflect locally now
+          setProfile((p) => p ? {
+            ...p,
+            subscription_status: "canceled",
+            trial_ends_at: null,
+            stripe_subscription_id: null,
+          } : p);
+        } else {
+          setProfile((p) => p ? {
+            ...p,
+            subscription_status: "canceling",
+            ...(body.current_period_end ? { current_period_end: body.current_period_end } : {}),
+          } : p);
+        }
         setCancelDone(true);
         setShowCancelModal(false);
       } else {
@@ -132,15 +152,23 @@ function DashboardInner() {
     setRenewing(false);
   };
 
+  const isTrial = profile?.subscription_status === "trialing";
   const isPremium =
     profile?.subscription_status === "active" ||
-    profile?.subscription_status === "canceling";
+    profile?.subscription_status === "canceling" ||
+    isTrial;
 
   const periodEnd = profile?.current_period_end
     ? new Date(profile.current_period_end).toLocaleDateString("en-US", {
         month: "long", day: "numeric", year: "numeric",
       })
     : null;
+
+  const trialDaysLeft = profile?.trial_ends_at
+    ? Math.max(0, Math.ceil((new Date(profile.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
+
+  const creditMax = isTrial ? 10 : isPremium ? 30 : 3;
 
   return (
     <>
@@ -189,7 +217,27 @@ function DashboardInner() {
           </div>
         )}
 
-        {cancelDone && (
+        {justStartedTrial && (
+          <div className="flex items-center gap-3 rounded-xl px-5 py-4 mb-8"
+            style={{ background: "rgba(126,184,154,0.1)", border: "1px solid rgba(126,184,154,0.3)" }}>
+            <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: "#7EB89A" }} />
+            <p className="text-sm font-medium" style={{ color: "#7EB89A" }}>
+              Your 7-day free trial has started! 10 credits added — enjoy Deep Dive access.
+            </p>
+          </div>
+        )}
+
+        {cancelDone && profile?.subscription_status === "canceled" && (
+          <div className="flex items-center gap-3 rounded-xl px-5 py-4 mb-8"
+            style={{ background: "rgba(232,168,62,0.08)", border: "1px solid rgba(232,168,62,0.2)" }}>
+            <AlertCircle className="w-4 h-4 shrink-0" style={{ color: "#E8A83E" }} />
+            <p className="text-sm" style={{ color: "#E8A83E" }}>
+              Your free trial has been canceled. You won't be charged.
+            </p>
+          </div>
+        )}
+
+        {cancelDone && profile?.subscription_status === "canceling" && (
           <div className="flex items-center gap-3 rounded-xl px-5 py-4 mb-8"
             style={{ background: "rgba(232,168,62,0.08)", border: "1px solid rgba(232,168,62,0.2)" }}>
             <AlertCircle className="w-4 h-4 shrink-0" style={{ color: "#E8A83E" }} />
@@ -235,9 +283,14 @@ function DashboardInner() {
 
                 <div className="flex flex-col items-end gap-3">
                   <StatusBadge status={profile?.subscription_status ?? null} />
-                  {profile?.subscription_plan && (
+                  {profile?.subscription_plan && !isTrial && (
                     <p className="text-xs capitalize" style={{ color: M }}>
                       {profile.subscription_plan} billing
+                    </p>
+                  )}
+                  {isTrial && trialDaysLeft !== null && (
+                    <p className="text-xs" style={{ color: M }}>
+                      {trialDaysLeft === 0 ? "Ends today" : `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} remaining`}
                     </p>
                   )}
                 </div>
@@ -249,13 +302,13 @@ function DashboardInner() {
                   <div
                     className="h-full rounded-full transition-all duration-700"
                     style={{
-                      width: `${Math.min(((profile?.credits ?? 0) / (isPremium ? 30 : 3)) * 100, 100)}%`,
+                      width: `${Math.min(((profile?.credits ?? 0) / creditMax) * 100, 100)}%`,
                       background: `linear-gradient(90deg, ${G}66, ${G})`,
                     }}
                   />
                 </div>
                 <p className="text-[10px] mt-1.5 text-right" style={{ color: M }}>
-                  {isPremium ? "30 credits / month" : "3 credits on free plan"}
+                  {isTrial ? "10 credits / 7-day trial" : isPremium ? "30 credits / month" : "3 credits on free plan"}
                 </p>
               </div>
             </div>
@@ -266,7 +319,44 @@ function DashboardInner() {
                 Subscription
               </p>
 
-              {isPremium ? (
+              {isTrial ? (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <Clock className="w-4 h-4" style={{ color: "#7EB89A" }} />
+                    <span className="font-semibold text-sm" style={{ color: H }}>7-Day Free Trial</span>
+                    <StatusBadge status="trialing" />
+                  </div>
+
+                  <div className="space-y-2 mb-6">
+                    {trialDaysLeft !== null && (
+                      <div className="flex items-center gap-2" style={{ color: M }}>
+                        <Calendar className="w-3.5 h-3.5 shrink-0" />
+                        <p className="text-sm">
+                          {trialDaysLeft === 0
+                            ? "Trial ends today — you'll be charged after midnight"
+                            : `Trial ends in ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"}`}
+                          {periodEnd && <span> on <span style={{ color: B }}>{periodEnd}</span></span>}
+                        </p>
+                      </div>
+                    )}
+                    {profile?.subscription_plan && (
+                      <p className="text-xs" style={{ color: M }}>
+                        After trial: auto-renews as {profile.subscription_plan} Premium
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => { setCancelError(null); setShowCancelModal(true); }}
+                    className="text-sm transition-colors"
+                    style={{ color: M }}
+                    onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "rgba(248,113,113,0.9)")}
+                    onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = M)}
+                  >
+                    Cancel free trial
+                  </button>
+                </div>
+              ) : isPremium ? (
                 <div>
                   <div className="flex items-center gap-3 mb-4">
                     <Crown className="w-4 h-4" style={{ color: G }} />
@@ -328,17 +418,33 @@ function DashboardInner() {
                     You're on the free plan. Upgrade to Premium for 30 credits per month and Deep Dive access.
                   </p>
                   <div className="flex flex-wrap gap-3">
+                    {!profile?.has_used_trial && (
+                      <button
+                        onClick={() => setShowUpgradeModal(true)}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
+                        style={{
+                          background: "linear-gradient(135deg, #D6A85F 0%, #a87c3a 100%)",
+                          color: "#000",
+                          boxShadow: "0 0 12px rgba(214,168,95,0.35)",
+                        }}
+                      >
+                        <Zap className="w-3.5 h-3.5" />
+                        Start 7-Day Free Trial
+                      </button>
+                    )}
                     <button
                       onClick={() => setShowUpgradeModal(true)}
                       className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
-                      style={{
+                      style={profile?.has_used_trial ? {
                         background: "linear-gradient(135deg, #D6A85F 0%, #a87c3a 100%)",
                         color: "#000",
                         boxShadow: "0 0 12px rgba(214,168,95,0.35)",
+                      } : {
+                        color: M,
+                        border: `1px solid ${DIV}`,
                       }}
                     >
-                      <Zap className="w-3.5 h-3.5" />
-                      Upgrade to Premium
+                      {profile?.has_used_trial ? <><Zap className="w-3.5 h-3.5" /> Upgrade to Premium</> : "Upgrade now"}
                     </button>
                     <Link
                       href="/chat"
@@ -358,7 +464,11 @@ function DashboardInner() {
       </div>
     </div>
 
-    <UpgradeModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+    <UpgradeModal
+      open={showUpgradeModal}
+      onClose={() => setShowUpgradeModal(false)}
+      hasUsedTrial={profile?.has_used_trial ?? false}
+    />
     <CancelModal
       open={showCancelModal}
       onClose={() => setShowCancelModal(false)}
@@ -366,6 +476,7 @@ function DashboardInner() {
       canceling={canceling}
       periodEnd={periodEnd}
       error={cancelError}
+      isTrial={isTrial}
     />
     </>
   );

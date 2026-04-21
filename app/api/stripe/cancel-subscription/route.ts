@@ -14,12 +14,19 @@ export async function POST() {
   const admin = createAdminClient();
   const { data: profile } = await admin
     .from("profiles")
-    .select("stripe_subscription_id")
+    .select("stripe_subscription_id, subscription_status")
     .eq("id", user.id)
     .single();
 
   if (!profile?.stripe_subscription_id) {
     return Response.json({ error: "No active subscription" }, { status: 400 });
+  }
+
+  // Trials are canceled immediately — no charge has been made
+  if (profile.subscription_status === "trialing") {
+    await stripe.subscriptions.cancel(profile.stripe_subscription_id);
+    // Webhook (customer.subscription.deleted) handles the DB update
+    return Response.json({ success: true, immediate: true });
   }
 
   const subscription = await stripe.subscriptions.update(profile.stripe_subscription_id, {

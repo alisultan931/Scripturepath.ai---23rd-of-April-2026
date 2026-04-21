@@ -12,19 +12,28 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { plan } = await request.json() as { plan: "monthly" | "yearly" };
+  const { plan } = await request.json() as { plan: "monthly" | "yearly" | "trial-monthly" | "trial-yearly" };
+
+  const isTrial = plan === "trial-monthly" || plan === "trial-yearly";
+  const billingPlan: "monthly" | "yearly" = isTrial
+    ? plan === "trial-yearly" ? "yearly" : "monthly"
+    : plan as "monthly" | "yearly";
 
   const priceId =
-    plan === "yearly"
+    billingPlan === "yearly"
       ? process.env.STRIPE_PRICE_YEARLY!
       : process.env.STRIPE_PRICE_MONTHLY!;
 
   const admin = createAdminClient();
   const { data: profile } = await admin
     .from("profiles")
-    .select("stripe_customer_id")
+    .select("stripe_customer_id, has_used_trial, credits")
     .eq("id", user.id)
     .single();
+
+  if (isTrial && profile?.has_used_trial) {
+    return Response.json({ error: "Free trial already used" }, { status: 400 });
+  }
 
   let customerId = profile?.stripe_customer_id as string | undefined;
 
@@ -42,15 +51,21 @@ export async function POST(request: NextRequest) {
 
   const origin = request.headers.get("origin") ?? "http://localhost:3000";
 
-  const session = await stripe.checkout.sessions.create({
+  const sessionParams: Stripe.Checkout.SessionCreateParams = {
     customer: customerId,
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${origin}/dashboard?success=true`,
+    success_url: `${origin}/dashboard?success=${isTrial ? "trial" : "true"}`,
     cancel_url: `${origin}/#pricing`,
-    metadata: { user_id: user.id, plan },
-  });
+    metadata: { user_id: user.id, plan: billingPlan, is_trial: isTrial ? "true" : "false" },
+  };
+
+  if (isTrial) {
+    sessionParams.subscription_data = { trial_period_days: 7 };
+  }
+
+  const session = await stripe.checkout.sessions.create(sessionParams);
 
   return Response.json({ url: session.url });
 }

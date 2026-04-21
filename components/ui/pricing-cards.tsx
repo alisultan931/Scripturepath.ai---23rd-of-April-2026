@@ -97,7 +97,7 @@ const Pricing2 = ({
         { text: "Priority generation speed" },
       ],
       button: {
-        text: "Start Premium",
+        text: "Start 7-Day Free Trial",
         url: "#",
         variant: "primary",
       },

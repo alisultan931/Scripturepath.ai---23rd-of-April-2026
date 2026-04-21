@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
       const session = event.data.object as Stripe.Checkout.Session;
       const userId = session.metadata?.user_id;
       const plan = session.metadata?.plan;
+      const isTrial = session.metadata?.is_trial === "true";
 
       if (!userId || !session.subscription) break;
 
@@ -39,23 +40,51 @@ export async function POST(request: NextRequest) {
         session.subscription as string
       );
 
-      await admin
-        .from("profiles")
-        .update({
-          stripe_subscription_id: subscription.id,
-          subscription_status: subscription.status,
-          subscription_plan: plan,
-          current_period_end: getPeriodEnd(subscription),
-          credits: 30,
-        })
-        .eq("id", userId);
+      if (isTrial) {
+        const { data: profile } = await admin
+          .from("profiles")
+          .select("credits")
+          .eq("id", userId)
+          .single();
+
+        const currentCredits = (profile?.credits as number) ?? 0;
+        const trialEndsAt = typeof subscription.trial_end === "number"
+          ? new Date(subscription.trial_end * 1000).toISOString()
+          : null;
+
+        await admin
+          .from("profiles")
+          .update({
+            stripe_subscription_id: subscription.id,
+            subscription_status: "trialing",
+            subscription_plan: plan,
+            current_period_end: getPeriodEnd(subscription),
+            credits: currentCredits + 10,
+            has_used_trial: true,
+            trial_ends_at: trialEndsAt,
+          })
+          .eq("id", userId);
+      } else {
+        await admin
+          .from("profiles")
+          .update({
+            stripe_subscription_id: subscription.id,
+            subscription_status: subscription.status,
+            subscription_plan: plan,
+            current_period_end: getPeriodEnd(subscription),
+            credits: 30,
+          })
+          .eq("id", userId);
+      }
       break;
     }
 
     case "invoice.paid": {
       const invoice = event.data.object as Stripe.Invoice;
-      // Only add credits on recurring renewal, not the initial payment
-      if (invoice.billing_reason !== "subscription_cycle") break;
+      const isRenewal = invoice.billing_reason === "subscription_cycle";
+      const isFirstCharge = invoice.billing_reason === "subscription_create";
+
+      if (!isRenewal && !isFirstCharge) break;
 
       const invoiceAny = invoice as unknown as Record<string, unknown>;
       const rawSub = invoiceAny.subscription;
@@ -63,6 +92,10 @@ export async function POST(request: NextRequest) {
       if (!subId) break;
 
       const subscription = await stripe.subscriptions.retrieve(subId);
+
+      // Skip non-trial initial charges — checkout.session.completed already handled those
+      if (isFirstCharge && subscription.trial_end === null) break;
+
       const rawCustomer = invoiceAny.customer;
       const customerId = typeof rawCustomer === "string" ? rawCustomer : (rawCustomer as { id?: string } | null)?.id;
       if (!customerId) break;
@@ -73,6 +106,8 @@ export async function POST(request: NextRequest) {
           subscription_status: subscription.status,
           current_period_end: getPeriodEnd(subscription),
           credits: 30,
+          // Clear trial fields when trial converts to paid
+          ...(isFirstCharge ? { trial_ends_at: null } : {}),
         })
         .eq("stripe_customer_id", customerId);
       break;
@@ -113,6 +148,7 @@ export async function POST(request: NextRequest) {
           stripe_subscription_id: null,
           subscription_plan: null,
           current_period_end: null,
+          trial_ends_at: null,
         })
         .eq("stripe_customer_id", customerId);
       break;

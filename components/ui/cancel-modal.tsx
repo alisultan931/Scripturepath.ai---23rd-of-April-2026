@@ -10,9 +10,10 @@ interface CancelModalProps {
   canceling: boolean;
   periodEnd: string | null;
   error: string | null;
+  isTrial?: boolean;
 }
 
-export default function CancelModal({ open, onClose, onConfirm, canceling, periodEnd, error }: CancelModalProps) {
+export default function CancelModal({ open, onClose, onConfirm, canceling, periodEnd, error, isTrial }: CancelModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,16 +53,18 @@ export default function CancelModal({ open, onClose, onConfirm, canceling, perio
           <div className="flex items-center gap-2 mb-3">
             <AlertCircle className="w-4 h-4" style={{ color: "rgba(248,113,113,0.8)" }} />
             <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: "rgba(248,113,113,0.6)" }}>
-              Cancel Subscription
+              {isTrial ? "Cancel Free Trial" : "Cancel Subscription"}
             </span>
           </div>
           <h2 className="text-xl font-semibold mb-1" style={{ color: "rgba(255,255,255,0.92)" }}>
             Are you sure?
           </h2>
           <p className="text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>
-            {periodEnd
-              ? `You'll keep full Premium access until ${periodEnd}. After that, your account will revert to the free plan.`
-              : "You'll keep full Premium access until the end of your current billing period."}
+            {isTrial
+              ? "Your free trial will end immediately and you won't be charged. Your account will revert to the free plan."
+              : periodEnd
+                ? `You'll keep full Premium access until ${periodEnd}. After that, your account will revert to the free plan.`
+                : "You'll keep full Premium access until the end of your current billing period."}
           </p>
         </div>
 
@@ -86,7 +89,11 @@ export default function CancelModal({ open, onClose, onConfirm, canceling, perio
               color: "rgba(248,113,113,0.9)",
             }}
           >
-            {canceling ? "Canceling…" : "Yes, cancel my subscription"}
+            {canceling
+              ? "Canceling…"
+              : isTrial
+                ? "Yes, cancel my free trial"
+                : "Yes, cancel my subscription"}
           </button>
 
           <button
@@ -99,7 +106,7 @@ export default function CancelModal({ open, onClose, onConfirm, canceling, perio
               color: "rgba(255,255,255,0.7)",
             }}
           >
-            Keep my plan
+            {isTrial ? "Keep my free trial" : "Keep my plan"}
           </button>
         </div>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, CircleCheck, Crown, X } from "lucide-react";
+import { ArrowRight, CircleCheck, Crown, Zap, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const FEATURES = [
@@ -15,9 +15,10 @@ const FEATURES = [
 interface UpgradeModalProps {
   open: boolean;
   onClose: () => void;
+  hasUsedTrial?: boolean;
 }
 
-export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
+export default function UpgradeModal({ open, onClose, hasUsedTrial = false }: UpgradeModalProps) {
   const [isYearly, setIsYearly] = useState(false);
   const [loading, setLoading] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -29,7 +30,7 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  const handleUpgrade = async () => {
+  const handleCheckout = async (plan: string) => {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { window.location.href = "/signin"; return; }
@@ -38,7 +39,7 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
       const res = await fetch("/api/stripe/create-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: isYearly ? "yearly" : "monthly" }),
+        body: JSON.stringify({ plan }),
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
@@ -91,6 +92,41 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
 
         {/* Body */}
         <div className="px-8 py-6">
+          {/* Free trial CTA — shown only if not yet used */}
+          {!hasUsedTrial && (
+            <div
+              className="mb-6 p-4"
+              style={{
+                background: "rgba(126,184,154,0.07)",
+                border: "1px solid rgba(126,184,154,0.2)",
+              }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "rgba(126,184,154,0.8)" }}>
+                7-Day Free Trial
+              </p>
+              <p className="text-sm mb-3" style={{ color: "rgba(255,255,255,0.55)" }}>
+                10 credits + Deep Dive access. Card required — cancel anytime before it ends.
+              </p>
+              <button
+                onClick={() => handleCheckout(isYearly ? "trial-yearly" : "trial-monthly")}
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition-opacity disabled:opacity-60"
+                style={{
+                  background: "rgba(126,184,154,0.15)",
+                  border: "1px solid rgba(126,184,154,0.3)",
+                  color: "rgba(126,184,154,0.95)",
+                }}
+              >
+                {loading ? "Redirecting…" : (
+                  <>
+                    <Zap className="w-3.5 h-3.5" />
+                    Start free trial
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
           {/* Billing toggle */}
           <div
             className="flex items-center mb-6 p-1 gap-1"
@@ -148,9 +184,9 @@ export default function UpgradeModal({ open, onClose }: UpgradeModalProps) {
             ))}
           </ul>
 
-          {/* CTA */}
+          {/* Pay now CTA */}
           <button
-            onClick={handleUpgrade}
+            onClick={() => handleCheckout(isYearly ? "yearly" : "monthly")}
             disabled={loading}
             className="w-full flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-opacity disabled:opacity-60"
             style={{
