@@ -867,7 +867,7 @@ export function buildPdfHtmlDirect(study: StudyDataForPdf, title: string, passag
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  @page { size: A4; margin: 18mm 20mm 15mm; }
+  @page { size: A4 portrait; margin: 16mm 20mm 14mm; }
 
   html, body {
     font-family: 'Inter', sans-serif;
@@ -880,44 +880,49 @@ export function buildPdfHtmlDirect(study: StudyDataForPdf, title: string, passag
   /* ── Page shells ── */
   .toc-page, .section-page {
     position: relative;
-    min-height: 100vh;
-    padding: 52px 64px 72px;
+    padding: 44px 60px 56px;
     display: flex;
     flex-direction: column;
   }
-  .section-page { break-before: page; }
+  /* TOC must not overflow — clamp to one print page */
+  .toc-page {
+    min-height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
+  }
+  .section-page { break-before: page; min-height: 100vh; }
 
   /* ── TOC ── */
   .toc-brand {
-    font-size: 9px;
+    font-size: 8.5px;
     font-weight: 700;
     letter-spacing: 0.28em;
     text-transform: uppercase;
     color: ${PG};
     opacity: 0.65;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
   }
   .toc-title {
     font-family: 'Lora', serif;
-    font-size: clamp(32px, 4vw, 52px);
+    font-size: 42px;
     font-weight: 600;
     line-height: 1.08;
     letter-spacing: -0.02em;
     color: rgba(255,255,255,0.95);
-    margin-bottom: 14px;
+    margin-bottom: 10px;
   }
-  .toc-passage-row { margin-bottom: 36px; }
+  .toc-passage-row { margin-bottom: 24px; }
   .toc-passage {
     font-family: 'Lora', serif;
     font-style: italic;
-    font-size: 15px;
+    font-size: 14px;
     color: ${PG};
     opacity: 0.85;
   }
   .toc-rule {
     height: 1px;
     background: rgba(255,255,255,0.08);
-    margin-bottom: 36px;
+    margin-bottom: 24px;
   }
   .toc-list {
     flex: 1;
@@ -929,25 +934,24 @@ export function buildPdfHtmlDirect(study: StudyDataForPdf, title: string, passag
     display: flex;
     align-items: baseline;
     gap: 12px;
-    padding: 11px 0;
+    padding: 9px 0;
     border-bottom: 1px solid rgba(255,255,255,0.05);
     text-decoration: none;
     color: inherit;
-    transition: color 0.15s;
   }
   .toc-item:last-child { border-bottom: none; }
   .toc-item:hover .toc-label { color: rgba(255,255,255,0.9); }
   .toc-num {
-    font-size: 10px;
+    font-size: 9.5px;
     font-weight: 700;
     letter-spacing: 0.14em;
     color: ${PG};
     opacity: 0.7;
-    width: 22px;
+    width: 20px;
     flex-shrink: 0;
   }
   .toc-label {
-    font-size: 13.5px;
+    font-size: 13px;
     color: rgba(255,255,255,0.68);
     flex: 1;
     min-width: 0;
@@ -956,22 +960,22 @@ export function buildPdfHtmlDirect(study: StudyDataForPdf, title: string, passag
     flex: 1;
     border-bottom: 1px dotted rgba(255,255,255,0.12);
     margin: 0 10px 4px;
-    max-width: 120px;
+    max-width: 100px;
   }
   .toc-page {
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 500;
     color: rgba(255,255,255,0.28);
     flex-shrink: 0;
   }
   .toc-footer {
-    margin-top: 36px;
+    margin-top: 20px;
     display: flex;
     justify-content: space-between;
-    font-size: 10px;
+    font-size: 9.5px;
     color: rgba(255,255,255,0.2);
     border-top: 1px solid rgba(255,255,255,0.06);
-    padding-top: 12px;
+    padding-top: 10px;
   }
 
   /* ── Section header ── */
