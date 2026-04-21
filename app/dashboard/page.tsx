@@ -394,7 +394,7 @@ function DashboardInner() {
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-stretch">
 
               {/* Left: Credits hero (3/5) */}
-              <div className="lg:col-span-3 rounded-2xl p-8 flex flex-col" style={{ background: CBG, border: `1px solid ${DIV}` }}>
+              <div className="dashboard-card lg:col-span-3 rounded-2xl p-8 flex flex-col" style={{ background: CBG, border: `1px solid ${DIV}` }}>
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-4" style={{ color: M }}>
                   Credits Remaining
                 </p>
@@ -425,26 +425,39 @@ function DashboardInner() {
                   </p>
                 </div>
 
-                {/* Bottom row: cost guide + studies count */}
-                <div className="flex items-center justify-between mt-6 pt-5" style={{ borderTop: `1px solid ${DIV}` }}>
-                  <p className="text-xs" style={{ color: M }}>
-                    Normal = 1 credit &nbsp;·&nbsp; Deep Dive = 2 credits
-                  </p>
-                  {!studiesLoading && (
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg shrink-0"
-                      style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${DIV}` }}>
-                      <BookMarked className="w-3 h-3" style={{ color: M }} />
-                      <span className="text-xs tabular-nums" style={{ color: M }}>
-                        <span style={{ color: B, fontWeight: 600 }}>{studies.length}</span>{" "}
-                        stud{studies.length === 1 ? "y" : "ies"} generated
-                      </span>
+                {/* Bottom row: cost guide + studies breakdown */}
+                {(() => {
+                  const deepCount = studiesLoading ? 0 : studies.filter(s => s.depth === "deep_dive").length;
+                  const normalCount = studiesLoading ? 0 : studies.length - deepCount;
+                  return (
+                    <div className="mt-6 pt-5" style={{ borderTop: `1px solid ${DIV}` }}>
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: M }}>Study Stats</p>
+                        <p className="text-[10px]" style={{ color: M }}>Normal = 1 cr &nbsp;·&nbsp; Deep Dive = 2 cr</p>
+                      </div>
+                      {!studiesLoading && (
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${DIV}` }}>
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] mb-1" style={{ color: M }}>Normal</p>
+                            <p className="text-xl font-bold tabular-nums leading-none" style={{ color: B }}>{normalCount}</p>
+                          </div>
+                          <div className="flex-1 rounded-xl px-3 py-2.5" style={{ background: GB, border: `1px solid ${GBD}` }}>
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] mb-1" style={{ color: `${G}99` }}>Deep Dive</p>
+                            <p className="text-xl font-bold tabular-nums leading-none" style={{ color: G }}>{deepCount}</p>
+                          </div>
+                          <div className="flex-1 rounded-xl px-3 py-2.5" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${DIV}` }}>
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] mb-1" style={{ color: M }}>Total</p>
+                            <p className="text-xl font-bold tabular-nums leading-none" style={{ color: H }}>{studies.length}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  );
+                })()}
               </div>
 
               {/* Right: Subscription (2/5) */}
-              <div className="lg:col-span-2 rounded-2xl p-8 flex flex-col" style={{ background: CBG, border: `1px solid ${DIV}` }}>
+              <div className="dashboard-card lg:col-span-2 rounded-2xl p-8 flex flex-col" style={{ background: CBG, border: `1px solid ${DIV}` }}>
                 <div className="flex items-center justify-between mb-5">
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: M }}>
                     Subscription
@@ -584,7 +597,7 @@ function DashboardInner() {
             </div>
 
             {/* ── Past Studies card ── */}
-            <div className="rounded-2xl p-8" style={{ background: CBG, border: `1px solid ${DIV}` }}>
+            <div className="dashboard-card rounded-2xl p-8" style={{ background: CBG, border: `1px solid ${DIV}` }}>
               <div className="flex items-center justify-between mb-5">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: M }}>
                   Past Studies
@@ -673,7 +686,7 @@ function DashboardInner() {
             </div>
 
             {/* ── Account Settings card ── */}
-            <div className="rounded-2xl p-8" style={{ background: CBG, border: `1px solid ${DIV}` }}>
+            <div className="dashboard-card rounded-2xl p-8" style={{ background: CBG, border: `1px solid ${DIV}` }}>
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-6" style={{ color: M }}>
                 Account Settings
               </p>

@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, User, Calendar, Users, Sparkles, Clock } from "lucide-react";
+import { BookOpen, User, Calendar, Users, Sparkles, Clock, FileDown, Loader2 } from "lucide-react";
 import { Navigation } from "@/components/ui/particle-effect-for-hero";
+import { buildPdfHtml, type SlideSpec } from "@/lib/pdf-builder";
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 export const H   = "rgba(255,255,255,0.92)";
@@ -377,6 +378,31 @@ export function StudyContent({ study, title, passage, description, depth, backHr
   const router = useRouter();
   const [active, setActive] = useState(0);
   const refs = useRef<(HTMLDivElement | null)[]>([]);
+  const [pdfState, setPdfState] = useState<"idle" | "loading" | "error">("idle");
+  const [pdfError, setPdfError] = useState<string | null>(null);
+
+  async function handleExportPdf() {
+    setPdfState("loading");
+    setPdfError(null);
+    try {
+      const res = await fetch("/api/export-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studyData: study }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Export failed");
+      const html = buildPdfHtml(json as SlideSpec);
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, "_blank");
+      if (win) win.onunload = () => URL.revokeObjectURL(url);
+      setPdfState("idle");
+    } catch (err) {
+      setPdfError(err instanceof Error ? err.message : "Export failed");
+      setPdfState("error");
+    }
+  }
 
   useEffect(() => {
     const obs = new IntersectionObserver(
@@ -420,15 +446,44 @@ export function StudyContent({ study, title, passage, description, depth, backHr
       <div className="max-w-245 mx-auto px-6 pt-24 pb-28 flex gap-14 items-start">
         <div className="flex-1 min-w-0">
           <div className="mb-10">
-            <button
-              onClick={() => backHref ? router.push(backHref) : router.back()}
-              className="text-xs font-medium mb-8 flex items-center gap-1.5 transition-colors duration-150"
-              style={{ color: M }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = B)}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = M)}
-            >
-              ← Back
-            </button>
+            <div className="flex items-center justify-between mb-8">
+              <button
+                onClick={() => backHref ? router.push(backHref) : router.back()}
+                className="text-xs font-medium flex items-center gap-1.5 transition-colors duration-150"
+                style={{ color: M }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = B)}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = M)}
+              >
+                ← Back
+              </button>
+
+              <div className="flex flex-col items-end gap-1">
+                <button
+                  onClick={handleExportPdf}
+                  disabled={pdfState === "loading"}
+                  className="flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-lg transition-all duration-150"
+                  style={{
+                    color: pdfState === "loading" ? `${G}88` : G,
+                    background: GB,
+                    border: `1px solid ${pdfState === "loading" ? `${G}44` : GBD}`,
+                    cursor: pdfState === "loading" ? "not-allowed" : "pointer",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (pdfState !== "loading") (e.currentTarget as HTMLButtonElement).style.background = GBD;
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLButtonElement).style.background = GB;
+                  }}
+                >
+                  {pdfState === "loading"
+                    ? <><Loader2 size={13} className="animate-spin" /> Generating…</>
+                    : <><FileDown size={13} /> Export PDF</>}
+                </button>
+                {pdfState === "error" && pdfError && (
+                  <p className="text-[10px]" style={{ color: "#e57373" }}>{pdfError}</p>
+                )}
+              </div>
+            </div>
 
             <div className="flex flex-wrap items-center gap-2 mb-5">
               <span className="text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded-full"

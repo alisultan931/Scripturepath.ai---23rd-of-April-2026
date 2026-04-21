@@ -462,6 +462,15 @@
   margin-bottom: 0.5rem;
 }
 
+/* Dashboard card hover glow */
+.dashboard-card {
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.dashboard-card:hover {
+  box-shadow: 0 0 28px rgba(196, 147, 78, 0.18);
+  border-color: rgba(196, 147, 78, 0.28) !important;
+}
+
 /* Golden h3 overrides — must stay last */
 #section-2 h3,
 #section-3 h3 {
