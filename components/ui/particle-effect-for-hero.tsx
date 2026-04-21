@@ -380,6 +380,7 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
     const [authLoading, setAuthLoading] = useState(true);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [isPremium, setIsPremium] = useState(false);
+    const [hasUsedTrial, setHasUsedTrial] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const supabaseRef = useRef(createClient());
@@ -393,12 +394,16 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
                 setFirstName(fullName ? fullName.split(' ')[0] : user.email?.split('@')[0] ?? null);
                 const { data: profile } = await supabase
                     .from('profiles')
-                    .select('subscription_status')
+                    .select('subscription_status, has_used_trial')
                     .eq('id', user.id)
                     .single();
                 setIsPremium(
                     profile?.subscription_status === 'active' ||
                     profile?.subscription_status === 'canceling'
+                );
+                setHasUsedTrial(
+                    profile?.has_used_trial === true ||
+                    profile?.subscription_status === 'trialing'
                 );
             }
             setAuthLoading(false);
@@ -515,7 +520,7 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
                 )}
             </div>
         </nav>
-        <UpgradeModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+        <UpgradeModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} hasUsedTrial={hasUsedTrial} />
         </>
     )
 }
