@@ -333,7 +333,7 @@ const [error, setError] = useState<string | null>(null);
           </div>
 
           {error && (
-            <p className="text-sm text-center text-red-400 mb-4">{error}</p>
+            <p className={`text-sm text-center mb-4 ${error === "Check your email to confirm your account." ? "text-yellow-400" : "text-red-400"}`}>{error}</p>
           )}
 
           {mode === "forgot-sent" ? (

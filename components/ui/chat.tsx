@@ -8,6 +8,7 @@ import AiLoader from "@/components/ui/ai-loader";
 import ProposalPage, { type Proposal } from "@/components/ui/proposal";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowRight, ChevronDown } from "lucide-react";
+import UpgradeModal from "@/components/ui/upgrade-modal";
 
 // --- Auto-resize textarea hook ---
 
@@ -194,15 +195,20 @@ export default function ScripturePathChat() {
   const [error, setError] = useState<string | null>(null);
   const [inputError, setInputError] = useState(false);
   const [proposal, setProposal] = useState<Proposal | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [isPro, setIsPro] = useState(false);
   const [credits, setCredits] = useState<number>(1);
   const [audience, setAudience] = useState(AUDIENCE_OPTIONS[0]);
   const [tone, setTone] = useState(TONE_OPTIONS[0]);
   const [translation, setTranslation] = useState(TRANSLATION_OPTIONS[0].value);
+  const [limitReached, setLimitReached] = useState(false);
+  const [limitResetAt, setLimitResetAt] = useState<number | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
+      setIsLoggedIn(!!user);
       if (!user) return;
       const { data } = await supabase
         .from("profiles")
@@ -223,12 +229,36 @@ export default function ScripturePathChat() {
     maxHeight: 220,
   });
 
-  const handleGenerate = async () => {
+  const DAILY_LIMIT = 10;
+  const DAILY_KEY = "proposal_daily_limit";
+
+  const tryConsumeLimit = (): boolean => {
+    if (isPro) return true;
+    const now = Date.now();
+    const raw = localStorage.getItem(DAILY_KEY);
+    const stored = raw ? JSON.parse(raw) : null;
+    if (stored && now < stored.resetAt) {
+      if (stored.count >= DAILY_LIMIT) {
+        setLimitReached(true);
+        setLimitResetAt(stored.resetAt);
+        return false;
+      }
+      localStorage.setItem(DAILY_KEY, JSON.stringify({ count: stored.count + 1, resetAt: stored.resetAt }));
+    } else {
+      localStorage.setItem(DAILY_KEY, JSON.stringify({ count: 1, resetAt: now + 24 * 60 * 60 * 1000 }));
+      setLimitReached(false);
+      setLimitResetAt(null);
+    }
+    return true;
+  };
+
+  const handleGenerate = async (skipLimitCheck = false) => {
     if (!query.trim()) {
       setInputError(true);
       textareaRef.current?.focus();
       return;
     }
+    if (!skipLimitCheck && !tryConsumeLimit()) return;
     setError(null);
     setLoading(true);
     try {
@@ -263,19 +293,23 @@ export default function ScripturePathChat() {
   };
 
   const handleRetry = async () => {
+    if (!tryConsumeLimit()) return;
     setProposal(null);
-    await handleGenerate();
+    await handleGenerate(true);
   };
 
-  const handleGenerateStudy = (depth: "normal" | "deep_dive") => {
-    if (!proposal) return;
+  const handleGenerateStudy = (depth: "normal" | "deep_dive", edited: Proposal) => {
+    if (!isLoggedIn) {
+      router.push("/signin");
+      return;
+    }
     const params = new URLSearchParams({
-      title: proposal.title,
-      passage: proposal.scripture_ref,
-      description: proposal.summary,
-      theme: proposal.theme,
-      audience: proposal.audience,
-      tone: proposal.tone,
+      title: edited.title,
+      passage: edited.scripture_ref,
+      description: edited.summary,
+      theme: edited.theme,
+      audience: edited.audience,
+      tone: edited.tone,
       depth,
     });
     router.push(`/study?${params.toString()}`);
@@ -290,11 +324,14 @@ export default function ScripturePathChat() {
         onRetry={handleRetry}
         onStartFromScratch={() => setProposal(null)}
         onGenerate={handleGenerateStudy}
+        retryLimitReached={limitReached}
+        retryResetAt={limitResetAt ?? undefined}
       />
     );
   }
 
   return (
+    <>
     <div className="relative w-full min-h-screen bg-black overflow-x-hidden flex flex-col">
       {loading && <AiLoader />}
       <AntiGravityCanvas disableMouseInteraction />
@@ -406,6 +443,22 @@ export default function ScripturePathChat() {
             <p className="mt-4 text-center text-sm text-red-400/80 font-light">{error}</p>
           )}
 
+          {limitReached && (
+            <p className="mt-4 text-center text-sm font-light" style={{ color: "rgba(255,160,80,0.85)" }}>
+              You&rsquo;ve reached the 10 free proposals for today.{" "}
+              {limitResetAt
+                ? `Try again in ${Math.ceil((limitResetAt - Date.now()) / 3600000)} hour${Math.ceil((limitResetAt - Date.now()) / 3600000) === 1 ? "" : "s"}.`
+                : "Try again in 24 hours."}{" "}
+              <button
+                onClick={() => setShowUpgradeModal(true)}
+                style={{ color: "rgba(196,147,78,0.9)", textDecoration: "underline", background: "none", border: "none", padding: 0, cursor: "pointer", font: "inherit" }}
+              >
+                Upgrade to Premium
+              </button>{" "}
+              for unlimited access.
+            </p>
+          )}
+
           {/* Generate button */}
           <style>{`
             @keyframes border-spin {
@@ -445,7 +498,7 @@ export default function ScripturePathChat() {
                   }}
                 />
                 <button
-                  onClick={handleGenerate}
+                  onClick={() => handleGenerate()}
                   className="relative inline-flex items-center gap-2 px-8 py-4 bg-black text-white rounded-full font-semibold tracking-wide overflow-hidden transition-all hover:bg-neutral-900"
                 >
                   <span className="relative z-10">Generate Study</span>
@@ -494,5 +547,7 @@ export default function ScripturePathChat() {
 
       </div>
     </div>
+    <UpgradeModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+    </>
   );
 }
