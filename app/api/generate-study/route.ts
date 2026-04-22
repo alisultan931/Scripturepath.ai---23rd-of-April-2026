@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { jsonrepair } from "jsonrepair";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -623,11 +624,15 @@ export async function POST(request: Request) {
   }
 
   function extractJson(message: Anthropic.Message): Record<string, unknown> {
+    if (message.stop_reason === "max_tokens") {
+      console.error("[generate-study] Response truncated — increase max_tokens");
+      throw new Error("Study generation was cut short. Please try again.");
+    }
     const content = message.content[0];
     if (content.type !== "text") throw new Error("Unexpected response format");
     const match = content.text.match(/\{[\s\S]*\}/);
     if (!match) throw new Error("No JSON object found in response");
-    return JSON.parse(match[0]);
+    return JSON.parse(jsonrepair(match[0]));
   }
 
   try {
