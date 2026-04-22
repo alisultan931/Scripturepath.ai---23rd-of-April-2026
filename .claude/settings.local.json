@@ -12,7 +12,8 @@
       "Skill(claude-api:*)",
       "Bash(xargs ls *)",
       "Bash(git -C /c/Users/alisu/scripture-path log --oneline -- \"*migration*\" \"*schema*\" \"*sql\")",
-      "Bash(npm uninstall *)"
+      "Bash(npm uninstall *)",
+      "Bash(git config *)"
     ]
   }
 }
