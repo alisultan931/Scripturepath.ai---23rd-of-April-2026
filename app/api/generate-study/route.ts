@@ -550,6 +550,18 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
+  if (depth === "deep_dive") {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("subscription_status")
+      .eq("id", user.id)
+      .single();
+    const status = profile?.subscription_status;
+    if (status !== "active" && status !== "canceling" && status !== "trialing") {
+      return Response.json({ error: "Deep Dive requires a trial or premium subscription" }, { status: 403 });
+    }
+  }
+
   const creditCost = depth === "deep_dive" ? 2 : 1;
   const { data: deductResult, error: deductError } = await admin.rpc(
     "deduct_credits",

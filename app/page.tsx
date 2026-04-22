@@ -17,7 +17,7 @@ export default async function DemoOne() {
       <TheologicalIntegritySection />
       <SparklesSection />
       <HowItWorksSection />
-      <Pricing />
+      <div id="pricing"><Pricing /></div>
       <CTA />
       <Footer />
     </main>

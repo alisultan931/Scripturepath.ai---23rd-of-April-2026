@@ -50,6 +50,7 @@ export interface Proposal {
 interface ProposalPageProps {
   proposal: Proposal;
   isPro?: boolean;
+  isTrial?: boolean;
   credits?: number;
   onRetry: () => void;
   onStartFromScratch: () => void;
@@ -74,13 +75,15 @@ const DEEP_DIVE_ONLY = [
   { icon: "⊟", text: "3-day mini action plan with daily prayer focus" },
 ];
 
-export default function ProposalPage({ proposal, isPro = false, credits = 1, onRetry, onStartFromScratch, onGenerate, retryLimitReached = false, retryResetAt, dailyLimit = 10 }: ProposalPageProps) {
+export default function ProposalPage({ proposal, isPro = false, isTrial = false, credits = 1, onRetry, onStartFromScratch, onGenerate, retryLimitReached = false, retryResetAt, dailyLimit = 10 }: ProposalPageProps) {
+  const canDeepDive = isPro || isTrial;
   const [deepDive, setDeepDive] = useState(false);
-  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editedProposal, setEditedProposal] = useState<Proposal>(proposal);
   const [generating, setGenerating] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [validationWarning, setValidationWarning] = useState<string | null>(null);
 
   const updateField = <K extends keyof Proposal>(field: K, value: Proposal[K]) =>
     setEditedProposal(prev => ({ ...prev, [field]: value }));
@@ -433,7 +436,7 @@ export default function ProposalPage({ proposal, isPro = false, credits = 1, onR
           {/* ── Mode buttons ── */}
           <div className="flex gap-3 mb-4">
             <button
-              onClick={() => { setDeepDive(false); setShowUpgradePrompt(false); }}
+              onClick={() => setDeepDive(false)}
               className="flex-1 flex items-center justify-center gap-2 py-3 text-sm transition-all hover:opacity-90"
               style={{
                 border: deepDive ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(255,255,255,0.35)",
@@ -446,7 +449,7 @@ export default function ProposalPage({ proposal, isPro = false, credits = 1, onR
               Normal
             </button>
             <button
-              onClick={() => { setDeepDive(true); setShowUpgradePrompt(false); }}
+              onClick={() => canDeepDive ? setDeepDive(true) : setShowUpgradeModal(true)}
               className="flex-1 flex items-center justify-center gap-2 py-3 text-sm transition-all deep-dive-btn"
               style={{
                 border: deepDive ? "1px solid rgba(214,168,95,0.6)" : "1px solid rgba(255,255,255,0.12)",
@@ -458,6 +461,7 @@ export default function ProposalPage({ proposal, isPro = false, credits = 1, onR
             >
               <Sparkles className="w-3.5 h-3.5" />
               Deep Dive
+              {!canDeepDive && <Crown className="w-3 h-3 opacity-50" />}
             </button>
           </div>
 
@@ -576,10 +580,10 @@ export default function ProposalPage({ proposal, isPro = false, credits = 1, onR
               }
             `}</style>
 
-            <div className={`group relative inline-flex w-full transition-all ${credits > 0 && !generating ? "hover:scale-[1.02] active:scale-95" : "opacity-50 cursor-not-allowed"}`}>
+            <div className={`group relative inline-flex w-full transition-all ${credits > 0 && !generating && !validating ? "hover:scale-[1.02] active:scale-95" : "opacity-50 cursor-not-allowed"}`}>
               <div
                 className="relative inline-flex w-full overflow-hidden"
-                style={{ padding: "1px", boxShadow: credits > 0 && !generating ? "0 0 28px rgba(214,168,95,0.1)" : "none" }}
+                style={{ padding: "1px", boxShadow: credits > 0 && !generating && !validating ? "0 0 28px rgba(214,168,95,0.1)" : "none" }}
               >
                 <div
                   aria-hidden="true"
@@ -589,7 +593,7 @@ export default function ProposalPage({ proposal, isPro = false, credits = 1, onR
                     width: "300%",
                     height: "300%",
                     background: "conic-gradient(from 0deg, transparent 70%, rgba(214,168,95,0.9) 78%, transparent 86%)",
-                    animation: credits > 0 && !generating ? "border-spin 4s linear infinite" : "none",
+                    animation: credits > 0 && !generating && !validating ? "border-spin 4s linear infinite" : "none",
                   }}
                 />
                 <div
@@ -600,21 +604,51 @@ export default function ProposalPage({ proposal, isPro = false, credits = 1, onR
                     width: "300%",
                     height: "300%",
                     background: "conic-gradient(from 0deg, transparent 70%, rgba(214,168,95,0.35) 78%, transparent 86%)",
-                    animation: credits > 0 && !generating ? "border-spin 4s linear infinite" : "none",
+                    animation: credits > 0 && !generating && !validating ? "border-spin 4s linear infinite" : "none",
                     filter: "blur(12px)",
                   }}
                 />
                 <button
-                  disabled={credits <= 0 || generating}
-                  onClick={() => {
-                    if (credits <= 0 || generating) return;
+                  disabled={credits <= 0 || generating || validating}
+                  onClick={async () => {
+                    if (credits <= 0 || generating || validating) return;
+                    setValidationWarning(null);
+                    const hasEdits =
+                      editedProposal.title !== proposal.title ||
+                      editedProposal.scripture_ref !== proposal.scripture_ref ||
+                      editedProposal.summary !== proposal.summary ||
+                      editedProposal.theme !== proposal.theme ||
+                      editedProposal.audience !== proposal.audience ||
+                      editedProposal.tone !== proposal.tone ||
+                      (editedProposal.key_verses ?? []).join(",") !== (proposal.key_verses ?? []).join(",");
+                    if (hasEdits) {
+                      setValidating(true);
+                      try {
+                        const res = await fetch("/api/validate-proposal", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ original: proposal, edited: editedProposal }),
+                        });
+                        const data = await res.json();
+                        if (!data.ethical) {
+                          setValidationWarning(data.message ?? "Your edits contain content that isn't appropriate for a Bible study. Please revise or revert to the original.");
+                          setEditedProposal(proposal);
+                          setEditing(false);
+                          return;
+                        }
+                      } catch {
+                        // network error — fail open and let the study generate
+                      } finally {
+                        setValidating(false);
+                      }
+                    }
                     setGenerating(true);
                     onGenerate(deepDive ? "deep_dive" : "normal", editedProposal);
                   }}
                   className="relative inline-flex items-center justify-center gap-2 w-full px-8 py-3 bg-black text-white overflow-hidden transition-all hover:bg-neutral-900 disabled:pointer-events-none"
                   style={{ fontWeight: 500, letterSpacing: "0.08em", fontSize: "0.85rem" }}
                 >
-                  <span className="relative z-10">{deepDive ? "Generate Deep Dive" : "Generate Study"}</span>
+                  <span className="relative z-10">{validating ? "Reviewing edits…" : deepDive ? "Generate Deep Dive" : "Generate Study"}</span>
                   <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
                   <div className="absolute inset-0 bg-white scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 opacity-[0.04]" />
                 </button>
@@ -628,6 +662,12 @@ export default function ProposalPage({ proposal, isPro = false, credits = 1, onR
                   Upgrade to Premium
                 </button>{" "}
                 or purchase more credits to generate a study.
+              </p>
+            )}
+
+            {validationWarning && (
+              <p className="text-center text-xs mt-2 leading-relaxed" style={{ color: "rgba(255,160,80,0.9)" }}>
+                {validationWarning}
               </p>
             )}
           </div>

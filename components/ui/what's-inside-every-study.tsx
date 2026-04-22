@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 
 const ITEMS = [
   { n: "01", title: "At a Glance",         badge: "Overview",        desc: "Passage, book, genre, key figures, and theological context summarized before you read a single verse." },
@@ -17,9 +17,19 @@ const ITEMS = [
 
 export default function SparklesSection() {
   const [active, setActive] = useState(0)
+  const paused = useRef(false)
 
-  const prev = () => setActive(i => Math.max(0, i - 1))
-  const next = () => setActive(i => Math.min(ITEMS.length - 1, i + 1))
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (!paused.current) {
+        setActive(i => (i + 1) % ITEMS.length)
+      }
+    }, 3500)
+    return () => clearInterval(id)
+  }, [])
+
+  const prev = () => { paused.current = true; setActive(i => Math.max(0, i - 1)) }
+  const next = () => { paused.current = true; setActive(i => Math.min(ITEMS.length - 1, i + 1)) }
 
   return (
     <div id="whats-inside" className="w-full flex flex-col items-center justify-center overflow-hidden bg-black pb-20">
@@ -125,11 +135,15 @@ export default function SparklesSection() {
 
         {/* Viewport */}
         <div
-          className="relative overflow-hidden rounded-2xl"
+          className="group/carousel relative overflow-hidden rounded-2xl transition-all duration-300"
+          onMouseEnter={() => { paused.current = true }}
+          onMouseLeave={() => { paused.current = false }}
           style={{
             border: "1px solid rgba(255,255,255,0.08)",
             boxShadow: "0 1px 0 rgba(255,255,255,0.04) inset, 0 24px 64px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)",
           }}
+          onMouseOver={e => (e.currentTarget.style.boxShadow = "0 0 25px 2px rgba(255,255,255,0.25), 0 1px 0 rgba(255,255,255,0.04) inset, 0 24px 64px rgba(0,0,0,0.6)")}
+          onMouseOut={e => (e.currentTarget.style.boxShadow = "0 1px 0 rgba(255,255,255,0.04) inset, 0 24px 64px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)")}
         >
           {/* Slide track */}
           <div
@@ -216,8 +230,12 @@ export default function SparklesSection() {
                         disabled={active === 0}
                         aria-label="Previous"
                         className="w-8 h-8 flex items-center justify-center rounded-full border border-white/10 text-white/40 transition-all duration-200 hover:border-white/25 hover:text-white/80 disabled:opacity-20 disabled:cursor-not-allowed"
+                        onMouseEnter={e => { if (active > 0) e.currentTarget.style.boxShadow = "0 0 10px 2px rgba(255,255,255,0.15)" }}
+                        onMouseLeave={e => { e.currentTarget.style.boxShadow = "" }}
                       >
-                        ←
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                          <path d="M9 2L4 7L9 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                       </button>
                       <button
                         onClick={next}
@@ -225,8 +243,12 @@ export default function SparklesSection() {
                         aria-label="Next"
                         className="w-8 h-8 flex items-center justify-center rounded-full border border-white/10 text-white/40 transition-all duration-200 hover:border-white/25 hover:text-white/80 disabled:opacity-20 disabled:cursor-not-allowed"
                         style={active < ITEMS.length - 1 ? { borderColor: "rgba(214,168,95,0.3)", color: "rgba(214,168,95,0.7)" } : undefined}
+                        onMouseEnter={e => { if (active < ITEMS.length - 1) e.currentTarget.style.boxShadow = "0 0 10px 2px rgba(214,168,95,0.35)" }}
+                        onMouseLeave={e => { e.currentTarget.style.boxShadow = "" }}
                       >
-                        →
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                          <path d="M5 2L10 7L5 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                       </button>
                     </div>
                   </div>
@@ -241,7 +263,7 @@ export default function SparklesSection() {
           {ITEMS.map((_, i) => (
             <button
               key={i}
-              onClick={() => setActive(i)}
+              onClick={() => { paused.current = true; setActive(i) }}
               aria-label={`Go to slide ${i + 1}`}
               className="rounded-full transition-all duration-300"
               style={{

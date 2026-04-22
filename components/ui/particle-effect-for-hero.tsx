@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { ArrowRight, ChevronDown, BookOpen, LogOut, LayoutDashboard, Zap } from 'lucide-react';
+import { ArrowRight, ChevronDown, BookOpen, LogOut, LayoutDashboard, Zap, Shield } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import UpgradeModal from '@/components/ui/upgrade-modal';
 
@@ -382,8 +382,12 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
     const [isPremium, setIsPremium] = useState(false);
     const [hasUsedTrial, setHasUsedTrial] = useState(false);
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const supabaseRef = useRef(createClient());
+
+    const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "")
+        .split(",").map((e) => e.trim()).filter(Boolean);
 
     useEffect(() => {
         const supabase = supabaseRef.current;
@@ -392,6 +396,7 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
             if (user) {
                 const fullName: string | undefined = user.user_metadata?.full_name;
                 setFirstName(fullName ? fullName.split(' ')[0] : user.email?.split('@')[0] ?? null);
+                setIsAdmin(ADMIN_EMAILS.includes(user.email ?? ""));
                 const { data: profile } = await supabase
                     .from('profiles')
                     .select('subscription_status, has_used_trial')
@@ -495,6 +500,19 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
 
                             {dropdownOpen && (
                                 <div className="absolute right-0 mt-2 w-44 bg-[#111111] border border-white/10 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] overflow-hidden">
+                                    {isAdmin && (
+                                        <>
+                                            <Link
+                                                href="/admin"
+                                                onClick={() => setDropdownOpen(false)}
+                                                className="w-full flex items-center gap-2 px-4 py-3 text-sm hover:bg-white/5 transition-colors"
+                                                style={{ color: '#C4934E' }}
+                                            >
+                                                <Shield className="w-3.5 h-3.5" /> Admin Panel
+                                            </Link>
+                                            <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+                                        </>
+                                    )}
                                     <Link
                                         href="/dashboard"
                                         onClick={() => setDropdownOpen(false)}
@@ -550,7 +568,7 @@ const HeroContent: React.FC = () => {
     }, []);
 
     return (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none px-4">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-4">
             <div className="max-w-4xl w-full text-center space-y-8">
                 <div className="inline-block animate-fade-in-up">
                     <span className="whitespace-nowrap py-1 px-3 border border-white/20 rounded-full text-[9px] sm:text-xs font-mono tracking-normal sm:tracking-widest uppercase bg-white/5 backdrop-blur-sm" style={{ color: '#D6A85F' }}>
@@ -598,7 +616,7 @@ const HeroContent: React.FC = () => {
                   }
                 `}</style>
 
-                <div className="pt-8 pointer-events-auto flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+                <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
 
                   <div className="group relative inline-flex flex-col items-center gap-2 transition-all hover:scale-105 active:scale-95">
                     <div
@@ -642,7 +660,7 @@ const HeroContent: React.FC = () => {
                   </div>
 
                   <button
-                    className="pointer-events-auto transition-colors text-sm flex items-center gap-1 hover:opacity-70 animate-float"
+                    className="transition-colors text-sm flex items-center gap-1 hover:opacity-70 animate-float"
                     style={{ color: '#D6A85F' }}
                     onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
                   >

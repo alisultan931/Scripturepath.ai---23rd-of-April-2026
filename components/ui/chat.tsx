@@ -324,6 +324,7 @@ export default function ScripturePathChat() {
       <ProposalPage
         proposal={proposal}
         isPro={isPro}
+        isTrial={isTrial}
         credits={credits}
         onRetry={handleRetry}
         onStartFromScratch={() => setProposal(null)}

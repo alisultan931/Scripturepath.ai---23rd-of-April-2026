@@ -159,7 +159,7 @@ export default function UpgradeModal({ open, onClose, hasUsedTrial = false }: Up
                   border: "1px solid rgba(196,147,78,0.2)",
                 }}
               >
-                SAVE 16%
+                SAVE 17%
               </span>
             </button>
           </div>

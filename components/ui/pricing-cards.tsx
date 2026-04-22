@@ -70,7 +70,7 @@ const Pricing2 = ({
       yearlyPrice: "$0",
       features: [
         { text: "5 studies per month" },
-        { text: "Normal + Deep Dive depth" },
+        { text: "Normal depth" },
         { text: "Basic library" },
         { text: "PDF export", disabled: true },
       ],
@@ -292,7 +292,7 @@ const Pricing2 = ({
             <span className="flex items-center gap-2">
               Yearly
               <span className="rounded-full bg-zinc-700 px-2 py-0.5 text-xs font-semibold" style={{ color: "#E8C992" }}>
-                SAVE 16%
+                SAVE 17%
               </span>
             </span>
           </div>

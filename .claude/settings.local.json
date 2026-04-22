@@ -10,7 +10,8 @@
       "Bash(xargs grep *)",
       "Skill(claude-api)",
       "Skill(claude-api:*)",
-      "Bash(xargs ls *)"
+      "Bash(xargs ls *)",
+      "Bash(git -C /c/Users/alisu/scripture-path log --oneline -- \"*migration*\" \"*schema*\" \"*sql\")"
     ]
   }
 }

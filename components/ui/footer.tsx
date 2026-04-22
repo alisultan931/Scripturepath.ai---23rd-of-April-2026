@@ -1,110 +1,89 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { DIcons } from "dicons";
 
 function handleScrollTop() {
-  window.scroll({
-    top: 0,
-    behavior: "smooth",
-  });
+  window.scroll({ top: 0, behavior: "smooth" });
 }
 
 const navColumns = [
   {
+    heading: "Product",
+    links: [
+      { label: "Pricing", href: "#pricing" },
+      { label: "Dashboard", href: "/dashboard" },
+    ],
+  },
+  {
+    heading: "Company",
     links: [
       { label: "About", href: "#" },
-      { label: "Works", href: "#" },
-      { label: "Pricing", href: "#" },
+      { label: "Contact", href: "/contact" },
     ],
   },
   {
+    heading: "Legal",
     links: [
-      { label: "Products", href: "#" },
-      { label: "Agency", href: "#" },
-      { label: "Dashboard", href: "#" },
-    ],
-  },
-  {
-    links: [
-      { label: "DIcons", href: "#" },
-      { label: "DShapes", href: "#" },
-      { label: "Graaadients", href: "#" },
-    ],
-  },
-  {
-    links: [
-      { label: "Design", href: "#" },
-      { label: "Components", href: "#" },
-      { label: "Blogs", href: "#" },
-    ],
-  },
-  {
-    links: [
-      { label: "Graphic", href: "#" },
-      { label: "3D Icons", href: "#" },
-      { label: "Colors", href: "#" },
-    ],
-  },
-  {
-    links: [
-      { label: "Contact", href: "#" },
-      { label: "Terms", href: "#" },
-      { label: "Privacy", href: "#" },
+      { label: "Terms", href: "/terms" },
+      { label: "Privacy", href: "/privacy" },
     ],
   },
 ];
 
 const socialIcons = [
   { icon: "Mail", label: "Email", href: "#" },
-  { icon: "X", label: "X", href: "#" },
   { icon: "Instagram", label: "Instagram", href: "#" },
-  { icon: "Threads", label: "Threads", href: "#" },
 ];
 
 const Footer = () => {
-
   return (
     <footer className="border-t border-white/10 bg-black text-white">
-      {/* Top: logo + description */}
-      <div className="mx-auto max-w-7xl px-6 py-12">
-        <div className="flex items-start gap-6">
-<p className="text-sm leading-relaxed text-white/70 max-w-2xl">
-            Your daily companion for scripture study and spiritual growth. Discover, reflect, and deepen your understanding of sacred texts — one verse at a time.
-          </p>
+      {/* Main row: brand + nav */}
+      <div className="mx-auto max-w-7xl px-6 py-14">
+        <div className="flex flex-col gap-12 lg:flex-row lg:justify-between">
+          {/* Brand */}
+          <div className="max-w-xs">
+            <span className="text-lg font-semibold tracking-tight text-white">
+              Scripture Path
+            </span>
+            <p className="mt-3 text-sm leading-relaxed text-white/50">
+              Your daily companion for scripture study and spiritual growth —
+              one verse at a time.
+            </p>
+          </div>
+
+          {/* Nav columns */}
+          <div className="flex flex-wrap gap-x-14 gap-y-8">
+            {navColumns.map((col) => (
+              <div key={col.heading}>
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/30">
+                  {col.heading}
+                </p>
+                <ul className="space-y-2">
+                  {col.links.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="text-sm text-white/60 transition-colors hover:text-white"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Divider */}
-      <div className="border-t border-dashed border-white/10" />
-
-      {/* Nav columns */}
-      <div className="mx-auto max-w-7xl px-6 py-10">
-        <div className="grid grid-cols-3 gap-y-6 sm:grid-cols-6">
-          {navColumns.map((col, i) => (
-            <ul key={i} className="space-y-3">
-              {col.links.map((link) => (
-                <li key={link.label}>
-                  <a
-                    href={link.href}
-                    className="text-sm text-white/60 transition-colors hover:text-white"
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          ))}
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className="border-t border-dashed border-white/10" />
-
-      {/* Social icons + scroll to top */}
-      <div className="mx-auto max-w-7xl px-6 py-8">
-        <div className="relative flex items-center justify-center">
-          <div className="flex flex-wrap items-center gap-3">
+      {/* Bottom bar */}
+      <div className="border-t border-white/10">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+          {/* Socials */}
+          <div className="flex items-center gap-2">
             {socialIcons.map(({ icon, label, href }) => {
               const Icon = DIcons[icon as keyof typeof DIcons] as React.ElementType;
               return (
@@ -112,36 +91,31 @@ const Footer = () => {
                   key={label}
                   href={href}
                   aria-label={label}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white/70 transition-colors hover:border-white/50 hover:text-white"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-white/50 transition-colors hover:border-white/40 hover:text-white"
                 >
-                  {Icon && <Icon className="h-4 w-4" strokeWidth={1.5} />}
+                  {Icon && <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />}
                 </a>
               );
             })}
           </div>
 
+          {/* Copyright */}
+          <p className="text-xs text-white/30">
+            © 2026 Made with{" "}
+            <DIcons.Heart className="mx-1 inline-block h-3.5 w-3.5 text-red-500" fill="currentColor" />{" "}
+            by <a href="https://stellaflo.com/" target="_blank" rel="noopener noreferrer" className="font-semibold text-white hover:underline">StellaFlo</a>
+          </p>
+
           {/* Scroll to top */}
-          <div className="absolute right-0 flex items-center rounded-full border border-white/20 px-1">
-            <button
-              type="button"
-              onClick={handleScrollTop}
-              aria-label="Scroll to top"
-              className="p-2 text-white/70 transition-colors hover:text-white"
-            >
-              <DIcons.ArrowUp className="h-4 w-4" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleScrollTop}
+            aria-label="Scroll to top"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-white/50 transition-colors hover:border-white/40 hover:text-white"
+          >
+            <DIcons.ArrowUp className="h-3.5 w-3.5" />
+          </button>
         </div>
-      </div>
-
-      {/* Divider */}
-      <div className="border-t border-dashed border-white/10" />
-
-      {/* Copyright */}
-      <div className="px-6 py-6 text-center text-sm text-white/50">
-        © 2026 Made with{" "}
-        <DIcons.Heart className="mx-1 inline-block h-4 w-4 text-red-500" fill="currentColor" />{" "}
-        by <span className="font-semibold text-white ml-1">StellaFlo</span>
       </div>
     </footer>
   );
