@@ -1,26 +1,20 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
 import { DIcons } from "dicons";
 
-function handleScrollTop() {
-  window.scroll({ top: 0, behavior: "smooth" });
-}
 
 const navColumns = [
   {
     heading: "Product",
     links: [
-      { label: "Pricing", href: "#pricing" },
-      { label: "Dashboard", href: "/dashboard" },
+      { label: "Pricing", href: "/#pricing", scrollTo: "pricing" },
     ],
   },
   {
     heading: "Company",
     links: [
-      { label: "About", href: "#" },
-      { label: "Contact", href: "/contact" },
+      { label: "About", href: "/#theological-integrity", scrollTo: "theological-integrity" },
     ],
   },
   {
@@ -32,10 +26,6 @@ const navColumns = [
   },
 ];
 
-const socialIcons = [
-  { icon: "Mail", label: "Email", href: "#" },
-  { icon: "Instagram", label: "Instagram", href: "#" },
-];
 
 const Footer = () => {
   return (
@@ -61,12 +51,25 @@ const Footer = () => {
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-white/30">
                   {col.heading}
                 </p>
-                <ul className="space-y-2">
+                <ul className={col.heading === "Legal" ? "flex gap-4" : "space-y-2"}>
                   {col.links.map((link) => (
                     <li key={link.label}>
                       <Link
                         href={link.href}
                         className="text-sm text-white/60 transition-colors hover:text-white"
+                        onClick={
+                          "scrollTo" in link
+                            ? (e) => {
+                                e.preventDefault();
+                                const el = document.getElementById(link.scrollTo as string);
+                                if (el) {
+                                  el.scrollIntoView({ behavior: "smooth" });
+                                } else {
+                                  window.location.href = link.href;
+                                }
+                              }
+                            : undefined
+                        }
                       >
                         {link.label}
                       </Link>
@@ -81,40 +84,13 @@ const Footer = () => {
 
       {/* Bottom bar */}
       <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          {/* Socials */}
-          <div className="flex items-center gap-2">
-            {socialIcons.map(({ icon, label, href }) => {
-              const Icon = DIcons[icon as keyof typeof DIcons] as React.ElementType;
-              return (
-                <a
-                  key={label}
-                  href={href}
-                  aria-label={label}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-white/50 transition-colors hover:border-white/40 hover:text-white"
-                >
-                  {Icon && <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />}
-                </a>
-              );
-            })}
-          </div>
-
+        <div className="mx-auto flex max-w-7xl items-center justify-center px-6 py-5">
           {/* Copyright */}
           <p className="text-xs text-white/30">
             © 2026 Made with{" "}
             <DIcons.Heart className="mx-1 inline-block h-3.5 w-3.5 text-red-500" fill="currentColor" />{" "}
             by <a href="https://stellaflo.com/" target="_blank" rel="noopener noreferrer" className="font-semibold text-white hover:underline">StellaFlo</a>
           </p>
-
-          {/* Scroll to top */}
-          <button
-            type="button"
-            onClick={handleScrollTop}
-            aria-label="Scroll to top"
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-white/50 transition-colors hover:border-white/40 hover:text-white"
-          >
-            <DIcons.ArrowUp className="h-3.5 w-3.5" />
-          </button>
         </div>
       </div>
     </footer>
