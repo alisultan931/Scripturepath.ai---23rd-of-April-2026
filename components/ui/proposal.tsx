@@ -1,30 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight, BookOpen, Check, ChevronDown, Crown, Pencil, RefreshCw, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, Crown, Loader2, Pencil, RefreshCw, RotateCcw, Sparkles, X } from "lucide-react";
 import { Navigation } from "@/components/ui/particle-effect-for-hero";
 import UpgradeModal from "@/components/ui/upgrade-modal";
-
-const AUDIENCE_OPTIONS = [
-  "Auto-detect — AI picks based on topic",
-  "Adult Sunday School — structured teaching format",
-  "Small Group — discussion & reflection",
-  "Sermon / Pulpit — proclamation-style delivery",
-  "Youth Group — accessible & energetic",
-  "Women's Ministry — relational depth",
-  "Men's Ministry — practical & direct",
-  "New Believers — clear & foundational",
-  "Personal Devotion — quiet & intimate",
-];
-
-const TONE_OPTIONS = [
-  "Auto-detect — AI picks based on topic",
-  "Devotional — personal & reflective",
-  "Expository — verse-by-verse depth",
-  "Topical — theme traced through Scripture",
-  "Evangelistic — gospel-centered invitation",
-  "Academic — scholarly & rigorous",
-];
 
 const STAR_DENSITY = 0.00012;
 const MOUSE_RADIUS = 160;
@@ -61,12 +40,12 @@ interface ProposalPageProps {
 }
 
 const DEEP_DIVE_ROWS = [
-  { label: "Observations",   normal: "5–8",    deep: "8–12" },
-  { label: "Key Takeaways",  normal: "3–5",    deep: "5–7" },
-  { label: "Cross References", normal: "2–4",  deep: "4–6" },
-  { label: "Applications",   normal: "3–5",    deep: "5–7 + 3-day plan" },
-  { label: "Discussion Qs",  normal: "5–8",    deep: "8–10 + Deep Dive Qs" },
-  { label: "Study Time",     normal: "~15 min", deep: "~45 min" },
+  { label: "Observations",     normal: "5–8",     deep: "8–12" },
+  { label: "Key Takeaways",    normal: "3–5",     deep: "5–7" },
+  { label: "Cross References", normal: "2–4",     deep: "4–6" },
+  { label: "Applications",     normal: "3–5",     deep: "5–7 + 3-day plan" },
+  { label: "Discussion Qs",    normal: "5–8",     deep: "8–10 + Deep Dive Qs" },
+  { label: "Study Time",       normal: "~15 min", deep: "~45 min" },
 ];
 
 const DEEP_DIVE_ONLY = [
@@ -75,18 +54,35 @@ const DEEP_DIVE_ONLY = [
   { icon: "⊟", text: "3-day mini action plan with daily prayer focus" },
 ];
 
-export default function ProposalPage({ proposal, isPro = false, isTrial = false, credits = 1, onRetry, onStartFromScratch, onGenerate, retryLimitReached = false, retryResetAt, dailyLimit = 10 }: ProposalPageProps) {
+export default function ProposalPage({
+  proposal,
+  isPro = false,
+  isTrial = false,
+  credits = 1,
+  onRetry,
+  onStartFromScratch,
+  onGenerate,
+  retryLimitReached = false,
+  retryResetAt,
+  dailyLimit = 10,
+}: ProposalPageProps) {
   const canDeepDive = isPro || isTrial;
+
+  // ── Proposal state (updated after a successful re-generate) ──
+  const [displayedProposal, setDisplayedProposal] = useState<Proposal>(proposal);
+
+  // ── UI state ──
   const [deepDive, setDeepDive] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [editedProposal, setEditedProposal] = useState<Proposal>(proposal);
   const [generating, setGenerating] = useState(false);
-  const [validating, setValidating] = useState(false);
-  const [validationWarning, setValidationWarning] = useState<string | null>(null);
 
-  const updateField = <K extends keyof Proposal>(field: K, value: Proposal[K]) =>
-    setEditedProposal(prev => ({ ...prev, [field]: value }));
+  // ── Edit modal state ──
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [changeRequest, setChangeRequest] = useState("");
+  const [refineLoading, setRefineLoading] = useState(false);
+  const [refineWarning, setRefineWarning] = useState<string | null>(null);
+
+  // ── Star canvas ──
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const starsRef = useRef<Star[]>([]);
@@ -135,9 +131,7 @@ export default function ProposalPage({ proposal, isPro = false, isTrial = false,
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const w = canvas.width / dpr;
       const h = canvas.height / dpr;
-
       ctx.clearRect(0, 0, w, h);
-
       const mouse = mouseRef.current;
       for (const s of starsRef.current) {
         if (mouse.active) {
@@ -158,7 +152,6 @@ export default function ProposalPage({ proposal, isPro = false, isTrial = false,
         if (s.x > w) s.x = 0;
         if (s.y < 0) s.y = h;
         if (s.y > h) s.y = 0;
-
         const twinkle = Math.sin(time * 0.0018 + s.phase) * 0.5 + 0.5;
         ctx.globalAlpha = s.alpha * (0.3 + 0.7 * twinkle);
         ctx.fillStyle = "#ffffff";
@@ -171,10 +164,8 @@ export default function ProposalPage({ proposal, isPro = false, isTrial = false,
     };
 
     rafRef.current = requestAnimationFrame(animate);
-
     const ro = new ResizeObserver(setup);
     ro.observe(wrapperRef.current || document.body);
-
     return () => {
       cancelAnimationFrame(rafRef.current);
       ro.disconnect();
@@ -186,8 +177,52 @@ export default function ProposalPage({ proposal, isPro = false, isTrial = false,
     if (!rect) return;
     mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top, active: true };
   };
-
   const handleMouseLeave = () => { mouseRef.current.active = false; };
+
+  // ── Re-generate proposal via Claude ──
+  const handleRefineProposal = async () => {
+    if (!changeRequest.trim() || refineLoading) return;
+    setRefineWarning(null);
+    setRefineLoading(true);
+    try {
+      const res = await fetch("/api/refine-proposal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ originalProposal: displayedProposal, changeRequest }),
+      });
+      const data = await res.json();
+      if (data.warning) {
+        setRefineWarning(data.warning);
+        return;
+      }
+      if (data.error) {
+        setRefineWarning(data.error);
+        return;
+      }
+      if (data.proposal) {
+        setDisplayedProposal(data.proposal);
+        setShowEditModal(false);
+        setChangeRequest("");
+      }
+    } catch {
+      setRefineWarning("Could not reach the server. Please check your connection and try again.");
+    } finally {
+      setRefineLoading(false);
+    }
+  };
+
+  const openEditModal = () => {
+    setChangeRequest("");
+    setRefineWarning(null);
+    setShowEditModal(true);
+  };
+
+  const closeEditModal = () => {
+    if (refineLoading) return;
+    setShowEditModal(false);
+    setChangeRequest("");
+    setRefineWarning(null);
+  };
 
   return (
     <>
@@ -200,7 +235,6 @@ export default function ProposalPage({ proposal, isPro = false, isTrial = false,
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
       <Navigation />
 
-      {/* Subtle vignette — matches pricing section */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 z-1 [background:radial-gradient(80%_60%_at_50%_15%,rgba(255,255,255,0.06),transparent_60%)]"
@@ -209,7 +243,7 @@ export default function ProposalPage({ proposal, isPro = false, isTrial = false,
       <div className="relative z-10 flex flex-col items-center justify-center flex-1 px-3 sm:px-6 pt-20 sm:pt-28 pb-20">
         <div className="w-full max-w-2xl bg-zinc-900/70 backdrop-blur supports-backdrop-filter:bg-zinc-900/60 shadow-[0_0_28px_6px_rgba(255,255,255,0.05)] border border-zinc-800 p-5 sm:p-8">
 
-          {/* ── Section marker + edit toggle ── */}
+          {/* ── Section marker + Edit button ── */}
           <div className="flex items-center justify-between mb-4 sm:mb-6">
             <div className="flex items-center gap-4">
               <div style={{ height: "1px", width: "32px", background: "rgba(214,168,95,0.6)" }} />
@@ -221,214 +255,100 @@ export default function ProposalPage({ proposal, isPro = false, isTrial = false,
               </span>
             </div>
             <button
-              onClick={() => setEditing(e => !e)}
+              onClick={openEditModal}
               className="edit-toggle-btn flex items-center gap-1.5 px-2.5 py-1.5 transition-all"
               style={{
-                border: editing ? "1px solid rgba(214,168,95,0.5)" : "1px solid rgba(255,255,255,0.12)",
-                color: editing ? "rgba(214,168,95,0.9)" : "rgba(255,255,255,0.35)",
-                background: editing ? "rgba(214,168,95,0.07)" : "transparent",
+                border: "1px solid rgba(255,255,255,0.12)",
+                color: "rgba(255,255,255,0.35)",
+                background: "transparent",
                 fontSize: "0.72rem",
                 letterSpacing: "0.08em",
               }}
             >
-              {editing ? <Check className="w-3 h-3" /> : <Pencil className="w-3 h-3" />}
-              {editing ? "Done" : "Edit"}
+              <Pencil className="w-3 h-3" />
+              Edit
             </button>
           </div>
 
-          {/* ── Oversized serif title ── */}
-          {editing ? (
-            <input
-              value={editedProposal.title}
-              onChange={e => updateField("title", e.target.value)}
-              className="w-full mb-4 bg-transparent border-b outline-none leading-[1.1] tracking-tight"
-              style={{
-                fontFamily: "Georgia, 'Times New Roman', serif",
-                fontWeight: 400,
-                fontSize: "clamp(1.65rem, 7vw, 3.6rem)",
-                color: "rgba(255,255,255,0.95)",
-                borderColor: "rgba(214,168,95,0.3)",
-              }}
-            />
-          ) : (
-            <h1
-              className="mb-4 leading-[1.1] tracking-tight"
-              style={{
-                fontFamily: "Georgia, 'Times New Roman', serif",
-                fontWeight: 400,
-                fontSize: "clamp(1.65rem, 7vw, 3.6rem)",
-                color: "rgba(255,255,255,0.95)",
-              }}
-            >
-              {editedProposal.title}
-            </h1>
-          )}
+          {/* ── Title ── */}
+          <h1
+            className="mb-4 leading-[1.1] tracking-tight"
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontWeight: 400,
+              fontSize: "clamp(1.65rem, 7vw, 3.6rem)",
+              color: "rgba(255,255,255,0.95)",
+            }}
+          >
+            {displayedProposal.title}
+          </h1>
 
           {/* ── Scripture ref ── */}
           <div className="flex items-center gap-2 mb-4 sm:mb-6">
             <BookOpen className="w-3.5 h-3.5 shrink-0" style={{ color: "rgba(214,168,95,0.7)" }} />
-            {editing ? (
-              <input
-                value={editedProposal.scripture_ref}
-                onChange={e => updateField("scripture_ref", e.target.value)}
-                className="flex-1 bg-transparent border-b outline-none"
-                style={{
-                  fontFamily: "Georgia, 'Times New Roman', serif",
-                  fontStyle: "italic",
-                  fontSize: "0.9rem",
-                  color: "rgba(214,168,95,0.8)",
-                  letterSpacing: "0.02em",
-                  borderColor: "rgba(214,168,95,0.3)",
-                }}
-              />
-            ) : (
-              <span
-                style={{
-                  fontFamily: "Georgia, 'Times New Roman', serif",
-                  fontStyle: "italic",
-                  fontSize: "0.9rem",
-                  color: "rgba(214,168,95,0.8)",
-                  letterSpacing: "0.02em",
-                }}
-              >
-                {editedProposal.scripture_ref}
-              </span>
-            )}
+            <span
+              style={{
+                fontFamily: "Georgia, 'Times New Roman', serif",
+                fontStyle: "italic",
+                fontSize: "0.9rem",
+                color: "rgba(214,168,95,0.8)",
+                letterSpacing: "0.02em",
+              }}
+            >
+              {displayedProposal.scripture_ref}
+            </span>
           </div>
 
           {/* ── Rule ── */}
           <div className="mb-6" style={{ height: "1px", background: "rgba(255,255,255,0.1)" }} />
 
-          {/* ── Pull quote / summary ── */}
-          {editing ? (
-            <textarea
-              value={editedProposal.summary}
-              onChange={e => updateField("summary", e.target.value)}
-              rows={3}
-              className="w-full mb-4 sm:mb-6 bg-transparent border outline-none resize-none leading-[1.7] sm:leading-[1.8] p-2"
-              style={{
-                fontFamily: "Georgia, 'Times New Roman', serif",
-                fontStyle: "italic",
-                fontSize: "0.95rem",
-                color: "rgba(255,255,255,0.6)",
-                borderColor: "rgba(255,255,255,0.12)",
-              }}
-            />
-          ) : (
-            <p
-              className="mb-4 sm:mb-6 leading-[1.7] sm:leading-[1.8]"
-              style={{
-                fontFamily: "Georgia, 'Times New Roman', serif",
-                fontStyle: "italic",
-                fontSize: "0.95rem",
-                color: "rgba(255,255,255,0.6)",
-              }}
-            >
-              &ldquo;{editedProposal.summary}&rdquo;
-            </p>
-          )}
+          {/* ── Summary ── */}
+          <p
+            className="mb-4 sm:mb-6 leading-[1.7] sm:leading-[1.8]"
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontStyle: "italic",
+              fontSize: "0.95rem",
+              color: "rgba(255,255,255,0.6)",
+            }}
+          >
+            &ldquo;{displayedProposal.summary}&rdquo;
+          </p>
 
           {/* ── Rule ── */}
           <div className="mb-6" style={{ height: "1px", background: "rgba(255,255,255,0.08)" }} />
 
-          {/* ── Metadata footnotes — left-aligned columns ── */}
+          {/* ── Metadata ── */}
           <div className="grid grid-cols-3 gap-3 sm:gap-8 mb-6">
-            {/* Theme — free text */}
-            <div>
-              <p className="mb-1.5" style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(214,168,95,0.6)" }}>
-                Theme
-              </p>
-              {editing ? (
-                <input
-                  value={editedProposal.theme}
-                  onChange={e => updateField("theme", e.target.value)}
-                  className="w-full bg-transparent border-b outline-none"
-                  style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", borderColor: "rgba(255,255,255,0.15)" }}
-                />
-              ) : (
-                <p style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "0.85rem", fontWeight: 400, color: "rgba(255,255,255,0.5)", lineHeight: 1.55 }}>
-                  {editedProposal.theme}
+            {[
+              { label: "Theme",    value: displayedProposal.theme },
+              { label: "Audience", value: displayedProposal.audience },
+              { label: "Tone",     value: displayedProposal.tone },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <p
+                  className="mb-1.5"
+                  style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(214,168,95,0.6)" }}
+                >
+                  {label}
                 </p>
-              )}
-            </div>
-
-            {/* Audience — dropdown */}
-            <div>
-              <p className="mb-1.5" style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(214,168,95,0.6)" }}>
-                Audience
-              </p>
-              {editing ? (
-                <div className="relative">
-                  <select
-                    value={editedProposal.audience}
-                    onChange={e => updateField("audience", e.target.value)}
-                    className="w-full appearance-none bg-transparent border-b outline-none cursor-pointer pr-5"
-                    style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", borderColor: "rgba(255,255,255,0.15)" }}
-                  >
-                    {(AUDIENCE_OPTIONS.includes(editedProposal.audience) ? AUDIENCE_OPTIONS : [editedProposal.audience, ...AUDIENCE_OPTIONS]).map(opt => (
-                      <option key={opt} value={opt} className="bg-neutral-900 text-white text-xs">{opt}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none" style={{ color: "rgba(255,255,255,0.3)" }} />
-                </div>
-              ) : (
                 <p style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "0.85rem", fontWeight: 400, color: "rgba(255,255,255,0.5)", lineHeight: 1.55 }}>
-                  {editedProposal.audience}
+                  {value}
                 </p>
-              )}
-            </div>
-
-            {/* Tone — dropdown */}
-            <div>
-              <p className="mb-1.5" style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(214,168,95,0.6)" }}>
-                Tone
-              </p>
-              {editing ? (
-                <div className="relative">
-                  <select
-                    value={editedProposal.tone}
-                    onChange={e => updateField("tone", e.target.value)}
-                    className="w-full appearance-none bg-transparent border-b outline-none cursor-pointer pr-5"
-                    style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", borderColor: "rgba(255,255,255,0.15)" }}
-                  >
-                    {(TONE_OPTIONS.includes(editedProposal.tone) ? TONE_OPTIONS : [editedProposal.tone, ...TONE_OPTIONS]).map(opt => (
-                      <option key={opt} value={opt} className="bg-neutral-900 text-white text-xs">{opt}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none" style={{ color: "rgba(255,255,255,0.3)" }} />
-                </div>
-              ) : (
-                <p style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "0.85rem", fontWeight: 400, color: "rgba(255,255,255,0.5)", lineHeight: 1.55 }}>
-                  {editedProposal.tone}
-                </p>
-              )}
-            </div>
+              </div>
+            ))}
           </div>
 
           {/* ── Rule ── */}
           <div className="mb-6" style={{ height: "1px", background: "rgba(255,255,255,0.07)" }} />
 
           {/* ── Key verses ── */}
-          {editing ? (
-            <div className="mb-6">
-              <p className="mb-1.5" style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(214,168,95,0.6)" }}>
-                Key Verses <span style={{ color: "rgba(255,255,255,0.2)", textTransform: "none", letterSpacing: 0, fontWeight: 400 }}>(comma-separated)</span>
-              </p>
-              <input
-                value={(editedProposal.key_verses ?? []).join(", ")}
-                onChange={e => updateField("key_verses", e.target.value.split(",").map(v => v.trim()).filter(Boolean))}
-                className="w-full bg-transparent border-b outline-none"
-                style={{ fontSize: "0.75rem", letterSpacing: "0.08em", color: "rgba(214,168,95,0.55)", borderColor: "rgba(214,168,95,0.2)" }}
-              />
-            </div>
-          ) : (
-            <p
-              className="mb-6"
-              style={{ fontSize: "0.75rem", letterSpacing: "0.08em", color: "rgba(214,168,95,0.55)", fontWeight: 400 }}
-            >
-              {(editedProposal.key_verses ?? []).join("  ·  ")}
-            </p>
-          )}
+          <p
+            className="mb-6"
+            style={{ fontSize: "0.75rem", letterSpacing: "0.08em", color: "rgba(214,168,95,0.55)", fontWeight: 400 }}
+          >
+            {(displayedProposal.key_verses ?? []).join("  ·  ")}
+          </p>
 
           {/* ── Rule ── */}
           <div className="mb-6" style={{ height: "1px", background: "rgba(255,255,255,0.07)" }} />
@@ -465,26 +385,18 @@ export default function ProposalPage({ proposal, isPro = false, isTrial = false,
             </button>
           </div>
 
-
           {/* ── Deep Dive info panel ── */}
           <div
             className="overflow-hidden transition-all duration-500 ease-in-out"
             style={{ maxHeight: deepDive ? "600px" : "0px", opacity: deepDive ? 1 : 0, marginBottom: deepDive ? "24px" : "0px" }}
           >
             <div style={{ border: "1px solid rgba(214,168,95,0.18)", background: "rgba(214,168,95,0.04)", padding: "16px 20px" }}>
-              {/* Header */}
               <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(214,168,95,0.55)", marginBottom: "14px" }}>
                 Deep Dive gives you more
               </p>
-
-              {/* Comparison rows */}
               <div style={{ marginBottom: "16px" }}>
                 {DEEP_DIVE_ROWS.map(({ label, normal, deep }) => (
-                  <div
-                    key={label}
-                    className="flex items-center justify-between py-2"
-                    style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
-                  >
+                  <div key={label} className="flex items-center justify-between py-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                     <span style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", minWidth: 0 }}>{label}</span>
                     <div className="flex items-center gap-4 shrink-0 ml-3">
                       <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.25)", minWidth: "36px", textAlign: "right" }}>{normal}</span>
@@ -493,8 +405,6 @@ export default function ProposalPage({ proposal, isPro = false, isTrial = false,
                   </div>
                 ))}
               </div>
-
-              {/* Only in Deep Dive */}
               <p style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(214,168,95,0.4)", marginBottom: "10px" }}>
                 Only in Deep Dive
               </p>
@@ -516,12 +426,7 @@ export default function ProposalPage({ proposal, isPro = false, isTrial = false,
                 onClick={retryLimitReached ? undefined : onRetry}
                 disabled={retryLimitReached}
                 className="action-secondary-btn flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-light transition-all disabled:cursor-not-allowed disabled:opacity-40"
-                style={{
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  color: "rgba(255,255,255,0.3)",
-                  background: "transparent",
-                  letterSpacing: "0.04em",
-                }}
+                style={{ border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.3)", background: "transparent", letterSpacing: "0.04em" }}
               >
                 <RefreshCw className="w-3.5 h-3.5 shrink-0" />
                 Try again
@@ -529,12 +434,7 @@ export default function ProposalPage({ proposal, isPro = false, isTrial = false,
               <button
                 onClick={onStartFromScratch}
                 className="action-secondary-btn flex-1 flex items-center justify-center gap-2 py-3 px-4 text-sm font-light transition-all"
-                style={{
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  color: "rgba(255,255,255,0.3)",
-                  background: "transparent",
-                  letterSpacing: "0.04em",
-                }}
+                style={{ border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.3)", background: "transparent", letterSpacing: "0.04em" }}
               >
                 <RotateCcw className="w-3.5 h-3.5 shrink-0" />
                 Start Over
@@ -555,18 +455,16 @@ export default function ProposalPage({ proposal, isPro = false, isTrial = false,
             )}
 
             <style>{`
+              @keyframes border-spin {
+                from { transform: rotate(0deg); }
+                to   { transform: rotate(360deg); }
+              }
               @media (hover: hover) {
                 .edit-toggle-btn:hover {
                   border-color: rgba(214,168,95,0.5) !important;
                   color: rgba(214,168,95,0.9) !important;
                   background: rgba(214,168,95,0.07) !important;
                 }
-              }
-              @keyframes border-spin {
-                from { transform: rotate(0deg); }
-                to   { transform: rotate(360deg); }
-              }
-              @media (hover: hover) {
                 .deep-dive-btn:hover {
                   border-color: rgba(214,168,95,0.5) !important;
                   color: rgba(214,168,95,0.85) !important;
@@ -580,75 +478,39 @@ export default function ProposalPage({ proposal, isPro = false, isTrial = false,
               }
             `}</style>
 
-            <div className={`group relative inline-flex w-full transition-all ${credits > 0 && !generating && !validating ? "hover:scale-[1.02] active:scale-95" : "opacity-50 cursor-not-allowed"}`}>
+            <div className={`group relative inline-flex w-full transition-all ${credits > 0 && !generating ? "hover:scale-[1.02] active:scale-95" : "opacity-50 cursor-not-allowed"}`}>
               <div
                 className="relative inline-flex w-full overflow-hidden"
-                style={{ padding: "1px", boxShadow: credits > 0 && !generating && !validating ? "0 0 28px rgba(214,168,95,0.1)" : "none" }}
+                style={{ padding: "1px", boxShadow: credits > 0 && !generating ? "0 0 28px rgba(214,168,95,0.1)" : "none" }}
               >
                 <div
                   aria-hidden="true"
                   style={{
-                    position: "absolute",
-                    inset: "-100%",
-                    width: "300%",
-                    height: "300%",
+                    position: "absolute", inset: "-100%", width: "300%", height: "300%",
                     background: "conic-gradient(from 0deg, transparent 70%, rgba(214,168,95,0.9) 78%, transparent 86%)",
-                    animation: credits > 0 && !generating && !validating ? "border-spin 4s linear infinite" : "none",
+                    animation: credits > 0 && !generating ? "border-spin 4s linear infinite" : "none",
                   }}
                 />
                 <div
                   aria-hidden="true"
                   style={{
-                    position: "absolute",
-                    inset: "-100%",
-                    width: "300%",
-                    height: "300%",
+                    position: "absolute", inset: "-100%", width: "300%", height: "300%",
                     background: "conic-gradient(from 0deg, transparent 70%, rgba(214,168,95,0.35) 78%, transparent 86%)",
-                    animation: credits > 0 && !generating && !validating ? "border-spin 4s linear infinite" : "none",
+                    animation: credits > 0 && !generating ? "border-spin 4s linear infinite" : "none",
                     filter: "blur(12px)",
                   }}
                 />
                 <button
-                  disabled={credits <= 0 || generating || validating}
-                  onClick={async () => {
-                    if (credits <= 0 || generating || validating) return;
-                    setValidationWarning(null);
-                    const hasEdits =
-                      editedProposal.title !== proposal.title ||
-                      editedProposal.scripture_ref !== proposal.scripture_ref ||
-                      editedProposal.summary !== proposal.summary ||
-                      editedProposal.theme !== proposal.theme ||
-                      editedProposal.audience !== proposal.audience ||
-                      editedProposal.tone !== proposal.tone ||
-                      (editedProposal.key_verses ?? []).join(",") !== (proposal.key_verses ?? []).join(",");
-                    if (hasEdits) {
-                      setValidating(true);
-                      try {
-                        const res = await fetch("/api/validate-proposal", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ original: proposal, edited: editedProposal }),
-                        });
-                        const data = await res.json();
-                        if (!data.ethical) {
-                          setValidationWarning(data.message ?? "Your edits contain content that isn't appropriate for a Bible study. Please revise or revert to the original.");
-                          setEditedProposal(proposal);
-                          setEditing(false);
-                          return;
-                        }
-                      } catch {
-                        // network error — fail open and let the study generate
-                      } finally {
-                        setValidating(false);
-                      }
-                    }
+                  disabled={credits <= 0 || generating}
+                  onClick={() => {
+                    if (credits <= 0 || generating) return;
                     setGenerating(true);
-                    onGenerate(deepDive ? "deep_dive" : "normal", editedProposal);
+                    onGenerate(deepDive ? "deep_dive" : "normal", displayedProposal);
                   }}
                   className="relative inline-flex items-center justify-center gap-2 w-full px-8 py-3 bg-black text-white overflow-hidden transition-all hover:bg-neutral-900 disabled:pointer-events-none"
                   style={{ fontWeight: 500, letterSpacing: "0.08em", fontSize: "0.85rem" }}
                 >
-                  <span className="relative z-10">{validating ? "Reviewing edits…" : deepDive ? "Generate Deep Dive" : "Generate Study"}</span>
+                  <span className="relative z-10">{deepDive ? "Generate Deep Dive" : "Generate Study"}</span>
                   <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
                   <div className="absolute inset-0 bg-white scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300 opacity-[0.04]" />
                 </button>
@@ -664,17 +526,124 @@ export default function ProposalPage({ proposal, isPro = false, isTrial = false,
                 or purchase more credits to generate a study.
               </p>
             )}
-
-            {validationWarning && (
-              <p className="text-center text-xs mt-2 leading-relaxed" style={{ color: "rgba(255,160,80,0.9)" }}>
-                {validationWarning}
-              </p>
-            )}
           </div>
 
         </div>
       </div>
     </div>
+
+    {/* ── Edit modal ── */}
+    {showEditModal && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center px-4"
+        style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
+        onClick={(e) => { if (e.target === e.currentTarget) closeEditModal(); }}
+      >
+        <div
+          className="w-full max-w-lg"
+          style={{
+            background: "rgba(18,18,20,0.98)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            boxShadow: "0 0 40px rgba(0,0,0,0.6)",
+            padding: "28px",
+          }}
+        >
+          {/* Modal header */}
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div style={{ height: "1px", width: "24px", background: "rgba(214,168,95,0.6)" }} />
+              <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.28em", textTransform: "uppercase", color: "rgba(214,168,95,0.7)" }}>
+                Request Changes
+              </span>
+            </div>
+            <button
+              onClick={closeEditModal}
+              disabled={refineLoading}
+              className="transition-opacity hover:opacity-60 disabled:opacity-30"
+              style={{ color: "rgba(255,255,255,0.4)" }}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Instruction */}
+          <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: "16px" }}>
+            Describe what you&rsquo;d like to change about the proposal — Claude will re-generate it based on your request.
+          </p>
+
+          {/* Textarea */}
+          <textarea
+            autoFocus
+            rows={4}
+            value={changeRequest}
+            onChange={e => { setChangeRequest(e.target.value); setRefineWarning(null); }}
+            onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleRefineProposal(); }}
+            placeholder={'e.g. "Make the tone more devotional" or "Focus on grace rather than judgment"'}
+            disabled={refineLoading}
+            className="w-full resize-none outline-none transition-colors"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              color: "rgba(255,255,255,0.85)",
+              fontSize: "0.88rem",
+              lineHeight: 1.65,
+              padding: "12px 14px",
+              marginBottom: "12px",
+              fontFamily: "inherit",
+            }}
+          />
+
+          {/* Warning */}
+          {refineWarning && (
+            <div
+              className="mb-4 px-3 py-2.5"
+              style={{ background: "rgba(255,140,60,0.07)", border: "1px solid rgba(255,140,60,0.2)" }}
+            >
+              <p style={{ fontSize: "0.8rem", color: "rgba(255,160,80,0.95)", lineHeight: 1.6 }}>
+                {refineWarning}
+              </p>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button
+              onClick={closeEditModal}
+              disabled={refineLoading}
+              className="action-secondary-btn flex-1 py-2.5 text-sm transition-all disabled:opacity-40"
+              style={{ border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.3)", background: "transparent", letterSpacing: "0.04em" }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleRefineProposal}
+              disabled={refineLoading || !changeRequest.trim()}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{
+                border: "1px solid rgba(214,168,95,0.45)",
+                color: refineLoading || !changeRequest.trim() ? "rgba(214,168,95,0.4)" : "rgba(214,168,95,0.9)",
+                background: "rgba(214,168,95,0.06)",
+                letterSpacing: "0.06em",
+                fontWeight: 500,
+              }}
+            >
+              {refineLoading ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Re-generating…
+                </>
+              ) : (
+                "Re-generate Proposal"
+              )}
+            </button>
+          </div>
+
+          <p style={{ marginTop: "10px", fontSize: "10px", color: "rgba(255,255,255,0.18)", textAlign: "center", letterSpacing: "0.04em" }}>
+            Cmd/Ctrl + Enter to submit
+          </p>
+        </div>
+      </div>
+    )}
 
     <UpgradeModal open={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
     </>
