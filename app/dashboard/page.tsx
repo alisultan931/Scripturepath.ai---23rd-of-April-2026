@@ -295,6 +295,7 @@ function DashboardInner() {
       setPasswordError(error.message);
     } else {
       setPasswordSuccess(true);
+      setIsOAuthUser(false);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
