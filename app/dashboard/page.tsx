@@ -564,7 +564,7 @@ function DashboardInner() {
                         </div>
                       )}
                     </>
-                  ) : (
+                  ) : isAdmin ? null : (
                     <>
                       <p className="text-sm mb-auto" style={{ color: B }}>
                         You're on the free plan. Upgrade for 30 credits/month and unlimited studies.
