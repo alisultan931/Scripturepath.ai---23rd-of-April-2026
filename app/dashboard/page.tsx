@@ -473,7 +473,10 @@ function DashboardInner() {
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: M }}>
                     Subscription
                   </p>
-                  <StatusBadge status={profile?.subscription_status ?? null} />
+                  {isAdmin
+                    ? <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ color: "#D6A85F", background: "rgba(214,168,95,0.12)", border: "1px solid rgba(214,168,95,0.3)" }}>Admin</span>
+                    : <StatusBadge status={profile?.subscription_status ?? null} />}
+
                 </div>
 
                 <div className="flex-1 flex flex-col">
@@ -564,7 +567,9 @@ function DashboardInner() {
                         </div>
                       )}
                     </>
-                  ) : isAdmin ? null : (
+                  ) : isAdmin ? (
+                    <p className="text-sm" style={{ color: B }}>Full access · No billing required.</p>
+                  ) : (
                     <>
                       <p className="text-sm mb-auto" style={{ color: B }}>
                         You're on the free plan. Upgrade for 30 credits/month and unlimited studies.

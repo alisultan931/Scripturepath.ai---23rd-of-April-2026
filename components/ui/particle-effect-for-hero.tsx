@@ -475,7 +475,7 @@ export const Navigation: React.FC<{ showNavLinks?: boolean }> = ({ showNavLinks 
                     <div className="ml-1 w-20 h-8 rounded-full bg-white/10 animate-pulse" />
                 ) : firstName ? (
                     <div className="flex items-center gap-2 ml-1">
-                        {!isPremium && (
+                        {!isPremium && !isAdmin && (
                             <button
                                 onClick={() => setShowUpgradeModal(true)}
                                 className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
