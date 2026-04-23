@@ -174,9 +174,10 @@ function DashboardInner() {
       setNewUsername(user.user_metadata?.full_name ?? "");
       setUserEmail(user.email ?? "");
 
-      // Detect OAuth: no email identity means no password set
+      // Detect OAuth: no email identity AND no previously-set password means no password set
       const hasEmailIdentity = user.identities?.some((i) => i.provider === "email") ?? false;
-      setIsOAuthUser(!hasEmailIdentity);
+      const hasSetPassword = user.user_metadata?.has_password === true;
+      setIsOAuthUser(!hasEmailIdentity && !hasSetPassword);
 
       const { data } = await supabase
         .from("profiles")
@@ -294,6 +295,10 @@ function DashboardInner() {
     if (error) {
       setPasswordError(error.message);
     } else {
+      // Persist that this OAuth user has set a password so detection survives refresh
+      if (isOAuthUser) {
+        await supabase.auth.updateUser({ data: { has_password: true } });
+      }
       setPasswordSuccess(true);
       setIsOAuthUser(false);
       setCurrentPassword("");
