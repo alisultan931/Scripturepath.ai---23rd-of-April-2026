@@ -211,6 +211,12 @@ export default function ScripturePathChat() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       setIsLoggedIn(!!user);
       if (!user) return;
+      const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "")
+        .split(",").map((e) => e.trim()).filter(Boolean);
+      if (adminEmails.includes(user.email ?? "")) {
+        setIsPro(true);
+        return;
+      }
       const { data } = await supabase
         .from("profiles")
         .select("subscription_status, credits")

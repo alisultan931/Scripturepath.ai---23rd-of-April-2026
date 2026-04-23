@@ -5,6 +5,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 const client = new Anthropic();
 
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "")
+  .split(",")
+  .map((e) => e.trim())
+  .filter(Boolean);
+
 const SYSTEM_PROMPT_1 = `You are ScripturePath.ai, a Bible study generation assistant. Return valid JSON only — no markdown, no preamble, no code fences.
 
 ABSOLUTE RULES — violating any is a critical failure:
@@ -545,37 +550,41 @@ export async function POST(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const isAdmin = ADMIN_EMAILS.includes(user.email ?? "");
+
   const { title, passage, description, theme, audience, tone, depth } =
     await request.json();
   const { signal } = request;
 
   const admin = createAdminClient();
 
-  if (depth === "deep_dive") {
-    const { data: profile } = await admin
-      .from("profiles")
-      .select("subscription_status")
-      .eq("id", user.id)
-      .single();
-    const status = profile?.subscription_status;
-    if (status !== "active" && status !== "canceling" && status !== "trialing") {
-      return Response.json({ error: "Deep Dive requires a trial or premium subscription" }, { status: 403 });
+  if (!isAdmin) {
+    if (depth === "deep_dive") {
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("subscription_status")
+        .eq("id", user.id)
+        .single();
+      const status = profile?.subscription_status;
+      if (status !== "active" && status !== "canceling" && status !== "trialing") {
+        return Response.json({ error: "Deep Dive requires a trial or premium subscription" }, { status: 403 });
+      }
     }
-  }
 
-  const creditCost = depth === "deep_dive" ? 2 : 1;
-  const { data: deductResult, error: deductError } = await admin.rpc(
-    "deduct_credits",
-    { user_uuid: user.id, amount: creditCost }
-  );
+    const creditCost = depth === "deep_dive" ? 2 : 1;
+    const { data: deductResult, error: deductError } = await admin.rpc(
+      "deduct_credits",
+      { user_uuid: user.id, amount: creditCost }
+    );
 
-  if (deductError) {
-    console.error("[generate-study] credit deduction error:", deductError);
-    return Response.json({ error: "Failed to process credits" }, { status: 500 });
-  }
+    if (deductError) {
+      console.error("[generate-study] credit deduction error:", deductError);
+      return Response.json({ error: "Failed to process credits" }, { status: 500 });
+    }
 
-  if (deductResult === -1) {
-    return Response.json({ error: "Insufficient credits" }, { status: 402 });
+    if (deductResult === -1) {
+      return Response.json({ error: "Insufficient credits" }, { status: 402 });
+    }
   }
 
   const passageQuery = passage.toLowerCase().replace(/\s+/g, "+");
@@ -646,7 +655,7 @@ export async function POST(request: Request) {
       scripture_ref: passage,
       study_data: studyData,
       depth,
-      credits_used: creditCost,
+      credits_used: isAdmin ? 0 : (depth === "deep_dive" ? 2 : 1),
     });
 
     return Response.json(studyData);

@@ -155,6 +155,7 @@ function DashboardInner() {
   const [usernameError, setUsernameError] = useState<string | null>(null);
 
   // Password change
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isOAuthUser, setIsOAuthUser] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -167,6 +168,10 @@ function DashboardInner() {
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.push("/signin"); return; }
+
+      const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "")
+        .split(",").map((e) => e.trim()).filter(Boolean);
+      if (adminEmails.includes(user.email ?? "")) setIsAdmin(true);
 
       const fullName: string | undefined = user.user_metadata?.full_name;
       const displayName = fullName ? fullName.split(" ")[0] : user.email?.split("@")[0] ?? "";
@@ -410,7 +415,7 @@ function DashboardInner() {
                     color: H,
                     textShadow: `0 0 40px ${G}33`,
                   }}>
-                    {profile?.credits ?? 0}
+                    {isAdmin ? "∞" : (profile?.credits ?? 0)}
                   </span>
                   <span className="text-base mb-4" style={{ color: M }}>credits</span>
                 </div>
@@ -421,13 +426,13 @@ function DashboardInner() {
                     <div
                       className="h-full rounded-full transition-all duration-700"
                       style={{
-                        width: `${Math.min(((profile?.credits ?? 0) / creditMax) * 100, 100)}%`,
+                        width: isAdmin ? "100%" : `${Math.min(((profile?.credits ?? 0) / creditMax) * 100, 100)}%`,
                         background: `linear-gradient(90deg, ${G}55, ${G})`,
                       }}
                     />
                   </div>
                   <p className="text-[10px] mt-1.5" style={{ color: M }}>
-                    {isTrial ? "10 credits / 7-day trial" : isPremium ? "30 credits / month" : "5 credits on free plan"}
+                    {isAdmin ? "Unlimited · Admin" : isTrial ? "10 credits / 7-day trial" : isPremium ? "30 credits / month" : "5 credits on free plan"}
                   </p>
                 </div>
 

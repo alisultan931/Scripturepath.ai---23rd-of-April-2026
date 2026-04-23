@@ -14,7 +14,8 @@
       "Bash(git -C /c/Users/alisu/scripture-path log --oneline -- \"*migration*\" \"*schema*\" \"*sql\")",
       "Bash(npm uninstall *)",
       "Bash(git config *)",
-      "WebFetch(domain:claude.ai)"
+      "WebFetch(domain:claude.ai)",
+      "Bash(grep -r \"has_used_trial\\\\|trial_ends_at\" /c/Users/alisu/scripture-path --include=\"*.sql\" --include=\"*.ts\" ! -path \"*/node_modules/*\" -n)"
     ]
   }
 }
