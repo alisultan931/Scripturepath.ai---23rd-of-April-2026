@@ -575,7 +575,7 @@ export default function ProposalPage({
 
           {/* Instruction */}
           <p style={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.45)", lineHeight: 1.6, marginBottom: "16px" }}>
-            Describe what you&rsquo;d like to change about the proposal — Claude will re-generate it based on your request.
+            Describe what you&rsquo;d like to change about the proposal — ScripturePath will re-generate it based on your request.
           </p>
 
           {/* Textarea */}
@@ -607,7 +607,13 @@ export default function ProposalPage({
               style={{ background: "rgba(255,140,60,0.07)", border: "1px solid rgba(255,140,60,0.2)" }}
             >
               <p style={{ fontSize: "0.8rem", color: "rgba(255,160,80,0.95)", lineHeight: 1.6 }}>
-                {refineWarning}
+                {refineWarning}{" "}
+                <a
+                  href="/chat"
+                  style={{ color: "rgba(214,168,95,0.9)", textDecoration: "underline", whiteSpace: "nowrap" }}
+                >
+                  Generate a new proposal instead.
+                </a>
               </p>
             </div>
           )}
