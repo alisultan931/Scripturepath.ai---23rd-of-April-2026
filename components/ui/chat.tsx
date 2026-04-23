@@ -329,6 +329,7 @@ export default function ScripturePathChat() {
         onRetry={handleRetry}
         onStartFromScratch={() => setProposal(null)}
         onGenerate={handleGenerateStudy}
+        onConsumeLimit={tryConsumeLimit}
         retryLimitReached={limitReached}
         retryResetAt={limitResetAt ?? undefined}
         dailyLimit={DAILY_LIMIT}

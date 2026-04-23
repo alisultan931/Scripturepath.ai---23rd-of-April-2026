@@ -34,6 +34,7 @@ interface ProposalPageProps {
   onRetry: () => void;
   onStartFromScratch: () => void;
   onGenerate: (depth: "normal" | "deep_dive", edited: Proposal) => void;
+  onConsumeLimit: () => boolean;
   retryLimitReached?: boolean;
   retryResetAt?: number;
   dailyLimit?: number;
@@ -62,6 +63,7 @@ export default function ProposalPage({
   onRetry,
   onStartFromScratch,
   onGenerate,
+  onConsumeLimit,
   retryLimitReached = false,
   retryResetAt,
   dailyLimit = 10,
@@ -182,6 +184,10 @@ export default function ProposalPage({
   // ── Re-generate proposal via Claude ──
   const handleRefineProposal = async () => {
     if (!changeRequest.trim() || refineLoading) return;
+    if (!onConsumeLimit()) {
+      closeEditModal();
+      return;
+    }
     setRefineWarning(null);
     setRefineLoading(true);
     try {
@@ -255,8 +261,9 @@ export default function ProposalPage({
               </span>
             </div>
             <button
-              onClick={openEditModal}
-              className="edit-toggle-btn flex items-center gap-1.5 px-2.5 py-1.5 transition-all"
+              onClick={retryLimitReached ? undefined : openEditModal}
+              disabled={retryLimitReached}
+              className="edit-toggle-btn flex items-center gap-1.5 px-2.5 py-1.5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
               style={{
                 border: "1px solid rgba(255,255,255,0.12)",
                 color: "rgba(255,255,255,0.35)",
