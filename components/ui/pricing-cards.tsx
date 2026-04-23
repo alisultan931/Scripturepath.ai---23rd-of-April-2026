@@ -69,7 +69,7 @@ const Pricing2 = ({
       monthlyPrice: "$0",
       yearlyPrice: "$0",
       features: [
-        { text: "5 studies per month" },
+        { text: "5 Credits /mo" },
         { text: "Normal depth" },
         { text: "Basic library" },
         { text: "PDF export", disabled: true },
@@ -89,7 +89,7 @@ const Pricing2 = ({
       yearlyPrice: "$199",
       mostPopular: true,
       features: [
-        { text: "10 studies per day" },
+        { text: "30 Credits /mo" },
         { text: "Normal + Deep Dive depth" },
         { text: "Full library with search" },
         { text: "PDF export for print & share" },

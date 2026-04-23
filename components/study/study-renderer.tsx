@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, User, Calendar, Users, Sparkles, Clock, FileDown, Loader2 } from "lucide-react";
+import { BookOpen, User, Calendar, Users, Sparkles, Clock, FileDown, Loader2, Lock } from "lucide-react";
 import { Navigation } from "@/components/ui/particle-effect-for-hero";
 import { buildPdfHtmlDirect } from "@/lib/pdf-builder";
+import { createClient } from "@/lib/supabase/client";
+import UpgradeModal from "@/components/ui/upgrade-modal";
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 export const H   = "rgba(255,255,255,0.92)";
@@ -380,6 +382,30 @@ export function StudyContent({ study, title, passage, description, depth, backHr
   const refs = useRef<(HTMLDivElement | null)[]>([]);
   const [pdfState, setPdfState] = useState<"idle" | "loading" | "error">("idle");
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [isPremium, setIsPremium] = useState(false);
+  const [hasUsedTrial, setHasUsedTrial] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase
+        .from("profiles")
+        .select("subscription_status, has_used_trial")
+        .eq("id", user.id)
+        .single()
+        .then(({ data }) => {
+          if (!data) return;
+          setIsPremium(
+            data.subscription_status === "active" ||
+            data.subscription_status === "canceling" ||
+            data.subscription_status === "trialing"
+          );
+          setHasUsedTrial(!!data.has_used_trial);
+        });
+    });
+  }, []);
 
   async function handleExportPdf() {
     setPdfState("loading");
@@ -459,27 +485,34 @@ export function StudyContent({ study, title, passage, description, depth, backHr
 
               <div className="flex flex-col items-end gap-1">
                 <button
-                  onClick={handleExportPdf}
-                  disabled={pdfState === "loading"}
+                  onClick={isPremium ? handleExportPdf : () => setUpgradeOpen(true)}
+                  disabled={isPremium && pdfState === "loading"}
                   className="flex items-center gap-2 text-xs font-semibold px-3.5 py-2 rounded-lg transition-all duration-150"
                   style={{
-                    color: pdfState === "loading" ? `${G}88` : G,
-                    background: GB,
-                    border: `1px solid ${pdfState === "loading" ? `${G}44` : GBD}`,
-                    cursor: pdfState === "loading" ? "not-allowed" : "pointer",
+                    color: isPremium
+                      ? (pdfState === "loading" ? `${G}88` : G)
+                      : "rgba(255,255,255,0.28)",
+                    background: isPremium ? GB : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${isPremium
+                      ? (pdfState === "loading" ? `${G}44` : GBD)
+                      : "rgba(255,255,255,0.08)"}`,
+                    cursor: isPremium && pdfState === "loading" ? "not-allowed" : "pointer",
                   }}
                   onMouseEnter={(e) => {
-                    if (pdfState !== "loading") (e.currentTarget as HTMLButtonElement).style.background = GBD;
+                    if (isPremium && pdfState !== "loading")
+                      (e.currentTarget as HTMLButtonElement).style.background = GBD;
                   }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.background = GB;
+                    (e.currentTarget as HTMLButtonElement).style.background = isPremium ? GB : "rgba(255,255,255,0.04)";
                   }}
                 >
-                  {pdfState === "loading"
+                  {isPremium && pdfState === "loading"
                     ? <><Loader2 size={13} className="animate-spin" /> Generating…</>
-                    : <><FileDown size={13} /> Export PDF</>}
+                    : isPremium
+                      ? <><FileDown size={13} /> Export PDF</>
+                      : <><Lock size={13} /> Export PDF</>}
                 </button>
-                {pdfState === "error" && pdfError && (
+                {isPremium && pdfState === "error" && pdfError && (
                   <p className="text-[10px]" style={{ color: "#e57373" }}>{pdfError}</p>
                 )}
               </div>
@@ -530,6 +563,8 @@ export function StudyContent({ study, title, passage, description, depth, backHr
 
         <TableOfContents active={active} />
       </div>
+
+      <UpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} hasUsedTrial={hasUsedTrial} />
     </div>
   );
 }
