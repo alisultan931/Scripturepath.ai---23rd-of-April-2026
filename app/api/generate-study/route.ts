@@ -504,8 +504,9 @@ async function fetchPassageText(passage: string): Promise<string> {
     const endChap = parseInt(ec), endVerse = parseInt(ev);
     const bq = book.toLowerCase().replace(/\s+/g, "+");
 
-    if (endChap - startChap > 1) {
-      // Fetch each chapter individually to avoid multi-boundary 400 errors.
+    if (endChap - startChap >= 1) {
+      // Fetch each chapter individually to avoid cross-chapter 404s.
+      // bible-api.com doesn't support cross-chapter ranges like C1:V1-C2:V2.
       // Middle chapters are fetched whole; last chapter uses :1-C:V.
       const chunks: string[] = [];
       for (let c = startChap; c <= endChap; c++) {
@@ -530,7 +531,7 @@ async function fetchPassageText(passage: string): Promise<string> {
     const startChap = parseInt(sc), endChap = parseInt(ec);
     const bq = book.toLowerCase().replace(/\s+/g, "+");
 
-    if (endChap - startChap > 1) {
+    if (endChap - startChap >= 1) {
       const chunks = Array.from({ length: endChap - startChap + 1 }, (_, i) =>
         `${bq}+${startChap + i}`
       );

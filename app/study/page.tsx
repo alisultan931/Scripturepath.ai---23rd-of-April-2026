@@ -34,7 +34,8 @@ function StudyPageInner() {
       })
       .catch((err) => {
         if (controller.signal.aborted) return;
-        setError(err instanceof Error ? err.message : "Failed to generate study");
+        console.error("[study] generation error:", err instanceof Error ? err.message : err);
+        setError("Heavy usage on the site - people are hungry for Gods word now, we are sorry for the server crash. Give us a few minutes and try again");
       });
     return () => controller.abort();
   }, []);
