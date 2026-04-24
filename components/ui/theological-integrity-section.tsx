@@ -1,9 +1,4 @@
-"use client";
-
-import React, { useState, useEffect } from "react";
 import { Check } from "lucide-react";
-
-const CYCLING_WORDS = ["Pastors", "Teachers", "Scholars", "Students"];
 
 
 const features = [
@@ -42,15 +37,6 @@ const stats = [
 ];
 
 export default function TheologicalIntegritySection() {
-  const [wordIndex, setWordIndex] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setWordIndex(i => (i + 1) % CYCLING_WORDS.length);
-    }, 2000);
-    return () => clearInterval(id);
-  }, []);
-
   return (
     <section id="theological-integrity" className="bg-black border-t border-white/10 py-24 md:py-32 px-4 selection:bg-white/15 selection:text-white">
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
@@ -101,30 +87,11 @@ export default function TheologicalIntegritySection() {
 
         {/* Right column — testimonial + stats */}
         <div className="space-y-5">
-          <span className="text-xs font-mono uppercase tracking-widest" style={{ color: '#D6A85F' }}>
-            Why{" "}
-            <span
-              key={wordIndex}
-              style={{
-                display: "inline-block",
-                animation: "fade-cycle 2s ease-in-out forwards",
-                color: "#ffffff",
-              }}
-            >
-              {CYCLING_WORDS[wordIndex]}
-            </span>
-            {" "}Trust Us
-            <style>{`
-              @keyframes fade-cycle {
-                0%   { opacity: 0; transform: translateY(4px); }
-                15%  { opacity: 1; transform: translateY(0); }
-                85%  { opacity: 1; transform: translateY(0); }
-                100% { opacity: 0; transform: translateY(-4px); }
-              }
-            `}</style>
-          </span>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight leading-[1.1] text-white">
+            Built on Non&#8209;Negotiables
+          </h2>
 
-          {/* Testimonial card */}
+          {/* Statement card */}
           <div className="group relative">
 
             {/* Outer glow */}
@@ -134,33 +101,28 @@ export default function TheologicalIntegritySection() {
               style={{ boxShadow: "0 0 25px 2px rgba(255,255,255,0.25)" }}
             />
 
-          <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] p-8 space-y-6 backdrop-blur-sm transition-all duration-300 group-hover:border-white/20">
-            <div
-              aria-hidden="true"
-              className="absolute top-5 left-7 text-6xl text-white/8 font-serif leading-none select-none pointer-events-none"
-            >
-              &ldquo;
-            </div>
+          <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] p-8 space-y-5 backdrop-blur-sm transition-all duration-300 group-hover:border-white/20">
+            <p className="text-white/70 text-base md:text-lg font-light leading-relaxed">
+              ScripturePath is new. We&rsquo;re not going to pretend otherwise with borrowed authority or stock testimonials.
+            </p>
 
-            <blockquote className="pt-5 text-white/80 text-lg md:text-xl font-light leading-relaxed italic">
-              &ldquo;I&rsquo;ve tried every AI tool out there. This is the first
-              one I can actually trust at the pulpit. The guardrails aren&rsquo;t
-              marketing — they&rsquo;re in the output.&rdquo;
-            </blockquote>
+            <p className="text-white/80 text-sm md:text-base font-light leading-relaxed">
+              What we can promise is this:
+            </p>
 
-            <div className="flex items-center gap-3 pt-1">
-              <div className="w-10 h-10 rounded-full bg-white/10 border border-white/15 flex items-center justify-center flex-shrink-0">
-                <span className="text-white/60 text-xs font-medium">DC</span>
-              </div>
-              <div>
-                <p className="font-medium text-sm" style={{ color: '#E8C992' }}>
-                  Pastor David Chen
-                </p>
-                <p className="text-white/40 text-xs font-light">
-                  Lead Pastor, Grace Community Church
-                </p>
-              </div>
-            </div>
+            <ul className="space-y-3 text-white/70 text-sm md:text-base font-light leading-relaxed">
+              <li>Every verse of Scripture in your study is pulled from a verified translation — never paraphrased, never generated.</li>
+              <li>Every theological claim is constrained by guardrails that cannot be overridden, even by the founder.</li>
+              <li>Every study points to Christ — because that&rsquo;s what Scripture does.</li>
+            </ul>
+
+            <p className="text-white/90 text-sm md:text-base font-medium leading-relaxed">
+              Try it.
+            </p>
+
+            <p className="text-white/50 text-sm font-light leading-relaxed italic">
+              If you find one hallucinated verse or one doctrinal overreach, tell us. We&rsquo;ll fix it.
+            </p>
           </div>
           </div>{/* end group */}
 
