@@ -268,6 +268,10 @@ export default function ScripturePathChat() {
       textareaRef.current?.focus();
       return;
     }
+    if (isLoggedIn === false) {
+      router.push("/signin");
+      return;
+    }
     if (!skipLimitCheck && !tryConsumeLimit()) return;
     setError(null);
     setLoading(true);
