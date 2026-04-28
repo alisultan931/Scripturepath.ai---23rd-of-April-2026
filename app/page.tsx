@@ -7,7 +7,14 @@ import SparklesSection from "@/components/ui/what's-inside-every-study";
 import { Pricing } from "@/components/ui/pricing-cards";
 import Footer from "@/components/ui/footer";
 import CTA from "@/components/ui/cta";
-export default async function DemoOne() {
+export default async function DemoOne({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string; next?: string }>;
+}) {
+  const { code, next } = await searchParams;
+  if (code) redirect(`/auth/callback?code=${code}${next ? `&next=${next}` : ""}`);
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (user) redirect("/chat");
