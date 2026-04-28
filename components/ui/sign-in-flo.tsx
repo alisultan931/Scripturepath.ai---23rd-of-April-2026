@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 interface Star {
@@ -227,6 +227,8 @@ export const Signin: React.FC = () => {
 const [error, setError] = useState<string | null>(null);
   const mouseRef = useRef({ x: -1000, y: -1000, active: false });
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") ?? "/chat";
   const supabase = createClient();
 
   const isSignUp = mode === "signup";
@@ -234,7 +236,7 @@ const [error, setError] = useState<string | null>(null);
   const handleGoogleSignIn = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
     });
   };
 
@@ -285,7 +287,7 @@ const [error, setError] = useState<string | null>(null);
         setIsSubmitting(false);
         return;
       }
-      router.push("/chat");
+      router.push(next);
     }
 
     setIsSubmitting(false);

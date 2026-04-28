@@ -234,6 +234,19 @@ export default function ScripturePathChat() {
     });
   }, []);
 
+  useEffect(() => {
+    if (isLoggedIn !== true) return;
+    const raw = sessionStorage.getItem("sp_pending_study");
+    if (!raw) return;
+    sessionStorage.removeItem("sp_pending_study");
+    try {
+      const { proposal: saved } = JSON.parse(raw) as { proposal: Proposal; depth: string };
+      setProposal(saved);
+    } catch {
+      // ignore
+    }
+  }, [isLoggedIn]);
+
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
     minHeight: 110,
     maxHeight: 220,
@@ -310,7 +323,8 @@ export default function ScripturePathChat() {
 
   const handleGenerateStudy = (depth: "normal" | "deep_dive", edited: Proposal) => {
     if (!isLoggedIn) {
-      router.push("/signin");
+      sessionStorage.setItem("sp_pending_study", JSON.stringify({ proposal: edited, depth }));
+      router.push("/signin?next=/chat");
       return;
     }
     const params = new URLSearchParams({
