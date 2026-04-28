@@ -234,28 +234,6 @@ export default function ScripturePathChat() {
     });
   }, []);
 
-  useEffect(() => {
-    if (isLoggedIn !== true) return;
-    const raw = sessionStorage.getItem("sp_pending_study");
-    if (!raw) return;
-    sessionStorage.removeItem("sp_pending_study");
-    try {
-      const { proposal: saved, depth } = JSON.parse(raw) as { proposal: Proposal; depth: "normal" | "deep_dive" };
-      const params = new URLSearchParams({
-        title: saved.title,
-        passage: saved.scripture_ref,
-        description: saved.summary,
-        theme: saved.theme,
-        audience: saved.audience,
-        tone: saved.tone,
-        depth,
-      });
-      router.push(`/study?${params.toString()}`);
-    } catch {
-      // ignore
-    }
-  }, [isLoggedIn, router]);
-
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
     minHeight: 110,
     maxHeight: 220,
@@ -332,8 +310,7 @@ export default function ScripturePathChat() {
 
   const handleGenerateStudy = (depth: "normal" | "deep_dive", edited: Proposal) => {
     if (!isLoggedIn) {
-      sessionStorage.setItem("sp_pending_study", JSON.stringify({ proposal: edited, depth }));
-      router.push("/signin?next=/chat");
+      router.push("/signin");
       return;
     }
     const params = new URLSearchParams({
